@@ -18,14 +18,30 @@ import '../domain/invoice_model.dart';
 class InvoiceExportService {
   const InvoiceExportService();
 
-  Future<void> sharePdf(InvoiceDetailModel detail) async {
-    final bytes = await buildPdfBytes(detail);
+  Future<void> sharePdf(
+    InvoiceDetailModel detail, {
+    String? storeName,
+    String? storeGstin,
+  }) async {
+    final bytes = await buildPdfBytes(
+      detail,
+      storeName: storeName,
+      storeGstin: storeGstin,
+    );
     final file = await _writeTempFile('${detail.invoice.invoiceNo}.pdf', bytes);
     await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
   }
 
-  Future<void> printInvoice(InvoiceDetailModel detail) async {
-    final bytes = await buildPdfBytes(detail);
+  Future<void> printInvoice(
+    InvoiceDetailModel detail, {
+    String? storeName,
+    String? storeGstin,
+  }) async {
+    final bytes = await buildPdfBytes(
+      detail,
+      storeName: storeName,
+      storeGstin: storeGstin,
+    );
     await Printing.layoutPdf(onLayout: (_) async => bytes);
   }
 
@@ -35,7 +51,11 @@ class InvoiceExportService {
     await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
   }
 
-  Future<Uint8List> buildPdfBytes(InvoiceDetailModel detail) async {
+  Future<Uint8List> buildPdfBytes(
+    InvoiceDetailModel detail, {
+    String? storeName,
+    String? storeGstin,
+  }) async {
     final invoice = detail.invoice;
     final doc = pw.Document();
 
@@ -45,9 +65,31 @@ class InvoiceExportService {
         build: (context) => [
           pw.Header(
             level: 0,
-            child: pw.Text(
-              invoice.invoiceNo,
-              style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (storeName != null && storeName.isNotEmpty)
+                  pw.Text(
+                    storeName,
+                    style: pw.TextStyle(
+                      fontSize: 22,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                if (storeGstin != null && storeGstin.isNotEmpty)
+                  pw.Text(
+                    'GSTIN: $storeGstin',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  invoice.invoiceNo,
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
           pw.Text(DateHelpers.formatDateTime(invoice.createdAt)),
@@ -55,9 +97,21 @@ class InvoiceExportService {
           pw.Text('Payment: ${_paymentModeLabel(invoice.paymentMode)}'),
           pw.Divider(),
           pw.TableHelper.fromTextArray(
-            headers: const ['#', 'Item', 'Qty', 'Rate', 'Total'],
+            headers: detail.hasTax
+                ? const ['#', 'Item', 'HSN', 'Qty', 'Rate', 'Total']
+                : const ['#', 'Item', 'Qty', 'Rate', 'Total'],
             data: detail.items.asMap().entries.map((entry) {
               final item = entry.value;
+              if (detail.hasTax) {
+                return [
+                  '${entry.key + 1}',
+                  item.itemName,
+                  item.hsnCode ?? '-',
+                  CurrencyFormatter.formatQuantity(item.quantity),
+                  CurrencyFormatter.formatWithoutSymbol(item.rate),
+                  CurrencyFormatter.formatWithoutSymbol(item.total),
+                ];
+              }
               return [
                 '${entry.key + 1}',
                 item.itemName,
@@ -67,6 +121,39 @@ class InvoiceExportService {
               ];
             }).toList(),
           ),
+          if (detail.hasTax && detail.hsnSummary.isNotEmpty) ...[
+            pw.SizedBox(height: 14),
+            pw.Text(
+              'Tax Breakdown (HSN)',
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 10,
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.TableHelper.fromTextArray(
+              headers: const [
+                'HSN',
+                'Rate',
+                'Taxable',
+                'CGST',
+                'SGST',
+                'Total Tax',
+              ],
+              data: detail.hsnSummary
+                  .map(
+                    (s) => [
+                      s.hsnCode,
+                      '${s.taxRate.toStringAsFixed(s.taxRate % 1 == 0 ? 0 : 1)}%',
+                      CurrencyFormatter.formatWithoutSymbol(s.taxableAmount),
+                      CurrencyFormatter.formatWithoutSymbol(s.cgstAmount),
+                      CurrencyFormatter.formatWithoutSymbol(s.sgstAmount),
+                      CurrencyFormatter.formatWithoutSymbol(s.totalTax),
+                    ],
+                  )
+                  .toList(),
+            ),
+          ],
           pw.SizedBox(height: 16),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -75,6 +162,32 @@ class InvoiceExportService {
               pw.Text(CurrencyFormatter.format(invoice.subtotalAmount)),
             ],
           ),
+          if (detail.hasTax) ...[
+            pw.SizedBox(height: 4),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Taxable Value'),
+                pw.Text(CurrencyFormatter.format(invoice.taxableAmount)),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('CGST'),
+                pw.Text(CurrencyFormatter.format(invoice.cgstAmount)),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('SGST'),
+                pw.Text(CurrencyFormatter.format(invoice.sgstAmount)),
+              ],
+            ),
+          ],
           if (invoice.discountAmount > 0)
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -118,6 +231,10 @@ class InvoiceExportService {
       TextCellValue('Invoice No'),
       TextCellValue('Date'),
       TextCellValue('Subtotal'),
+      TextCellValue('Taxable'),
+      TextCellValue('CGST'),
+      TextCellValue('SGST'),
+      TextCellValue('Total Tax'),
       TextCellValue('Discount'),
       TextCellValue('Total'),
       TextCellValue('Payment Mode'),
@@ -129,6 +246,10 @@ class InvoiceExportService {
         TextCellValue(invoice.invoiceNo),
         TextCellValue(DateHelpers.formatDateTime(invoice.createdAt)),
         DoubleCellValue(invoice.subtotalAmount),
+        DoubleCellValue(invoice.taxableAmount),
+        DoubleCellValue(invoice.cgstAmount),
+        DoubleCellValue(invoice.sgstAmount),
+        DoubleCellValue(invoice.totalTaxAmount),
         DoubleCellValue(invoice.discountAmount),
         DoubleCellValue(invoice.totalAmount),
         TextCellValue(_paymentModeLabel(invoice.paymentMode)),

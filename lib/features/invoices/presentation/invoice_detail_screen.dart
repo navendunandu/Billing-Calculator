@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/common_app_bar.dart';
 import '../domain/invoice_model.dart';
 import 'providers/invoice_providers.dart';
@@ -72,7 +73,12 @@ class InvoiceDetailScreen extends ConsumerWidget {
     InvoiceDetailModel detail,
   ) async {
     try {
-      await ref.read(invoiceExportServiceProvider).sharePdf(detail);
+      final prefs = ref.read(userPreferencesProvider);
+      await ref.read(invoiceExportServiceProvider).sharePdf(
+        detail,
+        storeName: prefs.storeName,
+        storeGstin: prefs.storeGstin,
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -88,7 +94,12 @@ class InvoiceDetailScreen extends ConsumerWidget {
     InvoiceDetailModel detail,
   ) async {
     try {
-      await ref.read(invoiceExportServiceProvider).printInvoice(detail);
+      final prefs = ref.read(userPreferencesProvider);
+      await ref.read(invoiceExportServiceProvider).printInvoice(
+        detail,
+        storeName: prefs.storeName,
+        storeGstin: prefs.storeGstin,
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(

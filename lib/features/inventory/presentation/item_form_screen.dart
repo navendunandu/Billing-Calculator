@@ -13,6 +13,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/common_app_bar.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../domain/inventory_item_model.dart';
+import '../../hsn/presentation/manage_hsn_screen.dart';
 import 'providers/inventory_providers.dart';
 
 class InventoryItemFormScreen extends ConsumerStatefulWidget {
@@ -41,6 +42,9 @@ class _InventoryItemFormScreenState
 
   String? _selectedCategory;
   InventoryUom _selectedUom = InventoryUom.pcs;
+  String? _selectedHsnCode;
+  double _taxRate = 0.0;
+  bool _isTaxInclusive = true;
   bool _isInitializing = false;
   String? _codeLoadError;
 
@@ -123,6 +127,9 @@ class _InventoryItemFormScreenState
       _imagePathController.text = item.imagePath ?? '';
       _selectedCategory = item.category;
       _selectedUom = item.uom;
+      _selectedHsnCode = item.hsnCode;
+      _taxRate = item.taxRate;
+      _isTaxInclusive = item.isTaxInclusive;
     }
 
     setState(() => _isInitializing = false);
@@ -350,6 +357,76 @@ class _InventoryItemFormScreenState
                           ),
                         ],
                       ),
+                      const SizedBox(height: AppSizes.spacingMedium),
+
+                      // HSN / Tax Slab Selector
+                      InkWell(
+                        onTap: () async {
+                          final selected = await showHsnPickerModal(
+                            context,
+                            ref,
+                          );
+                          if (selected != null) {
+                            setState(() {
+                              _selectedHsnCode = selected.hsnCode;
+                              _taxRate = selected.gstRate;
+                            });
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMedium,
+                        ),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'HSN / Tax Slab',
+                            hintText: 'Select HSN code & tax slab',
+                            prefixIcon: const Icon(
+                              Icons.receipt_long_outlined,
+                            ),
+                            suffixIcon: _selectedHsnCode != null
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    tooltip: 'Clear tax rate',
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedHsnCode = null;
+                                        _taxRate = 0.0;
+                                      });
+                                    },
+                                  )
+                                : const Icon(Icons.arrow_drop_down),
+                          ),
+                          child: Text(
+                            _selectedHsnCode != null
+                                ? 'HSN $_selectedHsnCode • ${_taxRate.toStringAsFixed(_taxRate % 1 == 0 ? 0 : 1)}% GST'
+                                : 'No tax slab selected (0% GST)',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: _selectedHsnCode != null
+                                  ? theme.colorScheme.onSurface
+                                  : theme.hintColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSizes.spacingSmall),
+
+                      // Tax Inclusive (MRP) Toggle
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Price includes Tax (MRP)'),
+                        subtitle: Text(
+                          _isTaxInclusive
+                              ? 'Tax is extracted from price during billing'
+                              : 'Tax will be added on top of base price at checkout',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
+                        value: _isTaxInclusive,
+                        onChanged: (val) => setState(() => _isTaxInclusive = val),
+                      ),
                       const SizedBox(height: AppSizes.spacingLarge),
 
                       // Section 3: Categorization
@@ -558,6 +635,9 @@ class _InventoryItemFormScreenState
       uom: _selectedUom,
       unitValue: unitValue,
       imagePath: _imagePathController.text.trim(),
+      hsnCode: _selectedHsnCode,
+      taxRate: _taxRate,
+      isTaxInclusive: _isTaxInclusive,
     );
 
     final notifier = ref.read(inventoryManagerProvider.notifier);

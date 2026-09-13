@@ -41,6 +41,15 @@ class InventoryItems extends Table {
     Constant(InventoryItemStatus.available.index),
   )();
 
+  /// Optional HSN / SAC code reference
+  TextColumn get hsnCode => text().withLength(min: 1, max: 20).nullable()();
+
+  /// Tax / GST percentage (e.g. 0.0, 5.0, 12.0, 18.0, 28.0)
+  RealColumn get taxRate => real().withDefault(const Constant(0.0))();
+
+  /// Whether selling price is tax-inclusive (MRP) or tax-exclusive (base rate)
+  BoolColumn get isTaxInclusive => boolean().withDefault(const Constant(true))();
+
   /// Created timestamp
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

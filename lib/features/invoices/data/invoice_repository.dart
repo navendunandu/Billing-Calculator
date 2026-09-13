@@ -74,6 +74,10 @@ class DriftInvoiceRepository implements InvoiceRepository {
           subtotalAmount: Value(request.subtotal),
           discountAmount: Value(request.discount),
           totalAmount: Value(request.grandTotal),
+          taxableAmount: Value(request.taxableAmount),
+          totalTaxAmount: Value(request.totalTaxAmount),
+          cgstAmount: Value(request.cgstAmount),
+          sgstAmount: Value(request.sgstAmount),
           paidAmount: Value(request.paidAmount),
           paymentMode: request.paymentMode,
           paymentStatus: request.paymentStatus,
@@ -87,12 +91,21 @@ class DriftInvoiceRepository implements InvoiceRepository {
       );
 
       final invoiceItems = request.items.asMap().entries.map((entry) {
+        final item = entry.value;
         return InvoiceItemsCompanion.insert(
           invoiceId: invoiceId,
-          itemName: entry.value.name,
-          quantity: entry.value.quantity,
-          rate: entry.value.rate,
-          total: entry.value.total,
+          itemName: item.name,
+          quantity: item.quantity,
+          rate: item.rate,
+          total: item.total,
+          discountAmount: Value(item.discountAmount),
+          hsnCode: Value(item.hsnCode),
+          taxRate: Value(item.taxRate),
+          taxableAmount: Value(item.taxableAmount),
+          taxAmount: Value(item.taxAmount),
+          cgstAmount: Value(item.cgstAmount),
+          sgstAmount: Value(item.sgstAmount),
+          isTaxInclusive: Value(item.isTaxInclusive),
           serialNo: Value(entry.key + 1),
         );
       }).toList();
@@ -125,6 +138,10 @@ class DriftInvoiceRepository implements InvoiceRepository {
       subtotalAmount: row.subtotalAmount,
       discountAmount: row.discountAmount,
       totalAmount: row.totalAmount,
+      taxableAmount: row.taxableAmount,
+      totalTaxAmount: row.totalTaxAmount,
+      cgstAmount: row.cgstAmount,
+      sgstAmount: row.sgstAmount,
       paidAmount: row.paidAmount,
       paymentMode: row.paymentMode,
       paymentStatus: row.paymentStatus,
@@ -144,6 +161,13 @@ class DriftInvoiceRepository implements InvoiceRepository {
       rate: row.rate,
       total: row.total,
       serialNo: row.serialNo,
+      hsnCode: row.hsnCode,
+      taxRate: row.taxRate,
+      taxableAmount: row.taxableAmount,
+      taxAmount: row.taxAmount,
+      cgstAmount: row.cgstAmount,
+      sgstAmount: row.sgstAmount,
+      isTaxInclusive: row.isTaxInclusive,
     );
   }
 }

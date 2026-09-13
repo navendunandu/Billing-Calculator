@@ -160,6 +160,9 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
               name: item.name,
               quantity: quantity,
               rate: item.price,
+              hsnCode: item.hsnCode,
+              taxRate: item.taxRate,
+              isTaxInclusive: item.isTaxInclusive,
             );
 
             final mergedIntoExisting = notifier.addBillItem(newItem);

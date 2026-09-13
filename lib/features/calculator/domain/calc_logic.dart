@@ -42,6 +42,36 @@ class CalculatorState {
   /// Total item count
   int get itemCount => billItems.length;
 
+  /// Total item quantity across all items
+  double get totalQuantity {
+    return billItems.fold(0.0, (sum, item) => sum + item.quantity);
+  }
+
+  /// Total taxable amount across all items
+  double get totalTaxableAmount {
+    return billItems.fold(0.0, (sum, item) => sum + item.taxableAmount);
+  }
+
+  /// Total tax amount across all items
+  double get totalTaxAmount {
+    return billItems.fold(0.0, (sum, item) => sum + item.taxAmount);
+  }
+
+  /// Total CGST amount across all items
+  double get totalCgstAmount {
+    return billItems.fold(0.0, (sum, item) => sum + item.cgstAmount);
+  }
+
+  /// Total SGST amount across all items
+  double get totalSgstAmount {
+    return billItems.fold(0.0, (sum, item) => sum + item.sgstAmount);
+  }
+
+  /// Whether any items in the bill have tax
+  bool get hasTax {
+    return billItems.any((item) => item.hasTax);
+  }
+
   /// Check if can add item (both qty and rate are valid)
   bool get canAddItem {
     return quantity > 0 && rate > 0;

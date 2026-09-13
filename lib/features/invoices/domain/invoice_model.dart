@@ -14,6 +14,10 @@ class InvoiceModel {
     required this.paymentStatus,
     this.customerId,
     this.notes,
+    this.taxableAmount = 0.0,
+    this.totalTaxAmount = 0.0,
+    this.cgstAmount = 0.0,
+    this.sgstAmount = 0.0,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -28,8 +32,14 @@ class InvoiceModel {
   final PaymentStatus paymentStatus;
   final int? customerId;
   final String? notes;
+  final double taxableAmount;
+  final double totalTaxAmount;
+  final double cgstAmount;
+  final double sgstAmount;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  bool get hasTax => totalTaxAmount > 0;
 }
 
 /// Line item on a saved invoice.
@@ -42,6 +52,13 @@ class InvoiceLineItemModel {
     required this.rate,
     required this.total,
     required this.serialNo,
+    this.hsnCode,
+    this.taxRate = 0.0,
+    this.taxableAmount = 0.0,
+    this.taxAmount = 0.0,
+    this.cgstAmount = 0.0,
+    this.sgstAmount = 0.0,
+    this.isTaxInclusive = true,
   });
 
   final int id;
@@ -51,7 +68,26 @@ class InvoiceLineItemModel {
   final double rate;
   final double total;
   final int serialNo;
+  final String? hsnCode;
+  final double taxRate;
+  final double taxableAmount;
+  final double taxAmount;
+  final double cgstAmount;
+  final double sgstAmount;
+  final bool isTaxInclusive;
+
+  bool get hasTax => taxRate > 0;
 }
+
+/// Helper record for HSN tax breakdown summaries.
+typedef HsnTaxSummary = ({
+  String hsnCode,
+  double taxRate,
+  double taxableAmount,
+  double cgstAmount,
+  double sgstAmount,
+  double totalTax,
+});
 
 /// Full invoice with line items for detail views and export.
 class InvoiceDetailModel {
@@ -59,6 +95,40 @@ class InvoiceDetailModel {
 
   final InvoiceModel invoice;
   final List<InvoiceLineItemModel> items;
+
+  bool get hasTax => invoice.hasTax || items.any((i) => i.hasTax);
+
+  /// Group items by HSN code and summarize taxable values & taxes
+  List<HsnTaxSummary> get hsnSummary {
+    final map = <String, HsnTaxSummary>{};
+
+    for (final item in items) {
+      if (!item.hasTax) continue;
+      final key = item.hsnCode ?? 'OTHERS';
+      final existing = map[key];
+      if (existing == null) {
+        map[key] = (
+          hsnCode: key,
+          taxRate: item.taxRate,
+          taxableAmount: item.taxableAmount,
+          cgstAmount: item.cgstAmount,
+          sgstAmount: item.sgstAmount,
+          totalTax: item.taxAmount,
+        );
+      } else {
+        map[key] = (
+          hsnCode: key,
+          taxRate: existing.taxRate,
+          taxableAmount: existing.taxableAmount + item.taxableAmount,
+          cgstAmount: existing.cgstAmount + item.cgstAmount,
+          sgstAmount: existing.sgstAmount + item.sgstAmount,
+          totalTax: existing.totalTax + item.taxAmount,
+        );
+      }
+    }
+
+    return map.values.toList();
+  }
 }
 
 /// Filter criteria for invoice list queries.
@@ -96,6 +166,10 @@ class SaveInvoiceRequest {
     required this.paymentStatus,
     this.customerId,
     this.notes,
+    this.taxableAmount = 0.0,
+    this.totalTaxAmount = 0.0,
+    this.cgstAmount = 0.0,
+    this.sgstAmount = 0.0,
   });
 
   final List<BillItem> items;
@@ -107,6 +181,10 @@ class SaveInvoiceRequest {
   final PaymentStatus paymentStatus;
   final int? customerId;
   final String? notes;
+  final double taxableAmount;
+  final double totalTaxAmount;
+  final double cgstAmount;
+  final double sgstAmount;
 }
 
 /// Result of a successful invoice save.

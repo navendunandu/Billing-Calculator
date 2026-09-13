@@ -400,6 +400,29 @@ class _DesktopLayout extends StatelessWidget {
                   _StatusChip(status: item.status),
                   const SizedBox(width: AppSizes.spacingSmall),
                   Text('Code: ${item.code}', style: theme.textTheme.bodySmall),
+                  if (item.taxRate > 0) ...[
+                    const SizedBox(width: AppSizes.spacingSmall),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentBackground,
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSmall,
+                        ),
+                      ),
+                      child: Text(
+                        item.taxLabel,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],

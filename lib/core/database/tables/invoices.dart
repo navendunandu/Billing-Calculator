@@ -28,6 +28,18 @@ class Invoices extends Table {
   /// Total amount after discount
   RealColumn get totalAmount => real().withDefault(const Constant(0.0))();
 
+  /// Total taxable amount (pre-tax base)
+  RealColumn get taxableAmount => real().withDefault(const Constant(0.0))();
+
+  /// Total tax amount (CGST + SGST)
+  RealColumn get totalTaxAmount => real().withDefault(const Constant(0.0))();
+
+  /// Total CGST amount
+  RealColumn get cgstAmount => real().withDefault(const Constant(0.0))();
+
+  /// Total SGST amount
+  RealColumn get sgstAmount => real().withDefault(const Constant(0.0))();
+
   /// Amount already paid against the invoice
   RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
 

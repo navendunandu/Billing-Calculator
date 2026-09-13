@@ -898,6 +898,54 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _taxableAmountMeta = const VerificationMeta(
+    'taxableAmount',
+  );
+  @override
+  late final GeneratedColumn<double> taxableAmount = GeneratedColumn<double>(
+    'taxable_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _totalTaxAmountMeta = const VerificationMeta(
+    'totalTaxAmount',
+  );
+  @override
+  late final GeneratedColumn<double> totalTaxAmount = GeneratedColumn<double>(
+    'total_tax_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _cgstAmountMeta = const VerificationMeta(
+    'cgstAmount',
+  );
+  @override
+  late final GeneratedColumn<double> cgstAmount = GeneratedColumn<double>(
+    'cgst_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sgstAmountMeta = const VerificationMeta(
+    'sgstAmount',
+  );
+  @override
+  late final GeneratedColumn<double> sgstAmount = GeneratedColumn<double>(
+    'sgst_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _paidAmountMeta = const VerificationMeta(
     'paidAmount',
   );
@@ -969,6 +1017,10 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
     subtotalAmount,
     discountAmount,
     totalAmount,
+    taxableAmount,
+    totalTaxAmount,
+    cgstAmount,
+    sgstAmount,
     paidAmount,
     paymentMode,
     paymentStatus,
@@ -1032,6 +1084,36 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
         ),
       );
     }
+    if (data.containsKey('taxable_amount')) {
+      context.handle(
+        _taxableAmountMeta,
+        taxableAmount.isAcceptableOrUnknown(
+          data['taxable_amount']!,
+          _taxableAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_tax_amount')) {
+      context.handle(
+        _totalTaxAmountMeta,
+        totalTaxAmount.isAcceptableOrUnknown(
+          data['total_tax_amount']!,
+          _totalTaxAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cgst_amount')) {
+      context.handle(
+        _cgstAmountMeta,
+        cgstAmount.isAcceptableOrUnknown(data['cgst_amount']!, _cgstAmountMeta),
+      );
+    }
+    if (data.containsKey('sgst_amount')) {
+      context.handle(
+        _sgstAmountMeta,
+        sgstAmount.isAcceptableOrUnknown(data['sgst_amount']!, _sgstAmountMeta),
+      );
+    }
     if (data.containsKey('paid_amount')) {
       context.handle(
         _paidAmountMeta,
@@ -1088,6 +1170,22 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
       totalAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}total_amount'],
+      )!,
+      taxableAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}taxable_amount'],
+      )!,
+      totalTaxAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_tax_amount'],
+      )!,
+      cgstAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cgst_amount'],
+      )!,
+      sgstAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sgst_amount'],
       )!,
       paidAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
@@ -1150,6 +1248,18 @@ class Invoice extends DataClass implements Insertable<Invoice> {
   /// Total amount after discount
   final double totalAmount;
 
+  /// Total taxable amount (pre-tax base)
+  final double taxableAmount;
+
+  /// Total tax amount (CGST + SGST)
+  final double totalTaxAmount;
+
+  /// Total CGST amount
+  final double cgstAmount;
+
+  /// Total SGST amount
+  final double sgstAmount;
+
   /// Amount already paid against the invoice
   final double paidAmount;
 
@@ -1174,6 +1284,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     required this.subtotalAmount,
     required this.discountAmount,
     required this.totalAmount,
+    required this.taxableAmount,
+    required this.totalTaxAmount,
+    required this.cgstAmount,
+    required this.sgstAmount,
     required this.paidAmount,
     required this.paymentMode,
     required this.paymentStatus,
@@ -1192,6 +1306,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     map['subtotal_amount'] = Variable<double>(subtotalAmount);
     map['discount_amount'] = Variable<double>(discountAmount);
     map['total_amount'] = Variable<double>(totalAmount);
+    map['taxable_amount'] = Variable<double>(taxableAmount);
+    map['total_tax_amount'] = Variable<double>(totalTaxAmount);
+    map['cgst_amount'] = Variable<double>(cgstAmount);
+    map['sgst_amount'] = Variable<double>(sgstAmount);
     map['paid_amount'] = Variable<double>(paidAmount);
     {
       map['payment_mode'] = Variable<int>(
@@ -1221,6 +1339,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       subtotalAmount: Value(subtotalAmount),
       discountAmount: Value(discountAmount),
       totalAmount: Value(totalAmount),
+      taxableAmount: Value(taxableAmount),
+      totalTaxAmount: Value(totalTaxAmount),
+      cgstAmount: Value(cgstAmount),
+      sgstAmount: Value(sgstAmount),
       paidAmount: Value(paidAmount),
       paymentMode: Value(paymentMode),
       paymentStatus: Value(paymentStatus),
@@ -1244,6 +1366,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       subtotalAmount: serializer.fromJson<double>(json['subtotalAmount']),
       discountAmount: serializer.fromJson<double>(json['discountAmount']),
       totalAmount: serializer.fromJson<double>(json['totalAmount']),
+      taxableAmount: serializer.fromJson<double>(json['taxableAmount']),
+      totalTaxAmount: serializer.fromJson<double>(json['totalTaxAmount']),
+      cgstAmount: serializer.fromJson<double>(json['cgstAmount']),
+      sgstAmount: serializer.fromJson<double>(json['sgstAmount']),
       paidAmount: serializer.fromJson<double>(json['paidAmount']),
       paymentMode: $InvoicesTable.$converterpaymentMode.fromJson(
         serializer.fromJson<int>(json['paymentMode']),
@@ -1266,6 +1392,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       'subtotalAmount': serializer.toJson<double>(subtotalAmount),
       'discountAmount': serializer.toJson<double>(discountAmount),
       'totalAmount': serializer.toJson<double>(totalAmount),
+      'taxableAmount': serializer.toJson<double>(taxableAmount),
+      'totalTaxAmount': serializer.toJson<double>(totalTaxAmount),
+      'cgstAmount': serializer.toJson<double>(cgstAmount),
+      'sgstAmount': serializer.toJson<double>(sgstAmount),
       'paidAmount': serializer.toJson<double>(paidAmount),
       'paymentMode': serializer.toJson<int>(
         $InvoicesTable.$converterpaymentMode.toJson(paymentMode),
@@ -1286,6 +1416,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     double? subtotalAmount,
     double? discountAmount,
     double? totalAmount,
+    double? taxableAmount,
+    double? totalTaxAmount,
+    double? cgstAmount,
+    double? sgstAmount,
     double? paidAmount,
     PaymentMode? paymentMode,
     PaymentStatus? paymentStatus,
@@ -1299,6 +1433,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     subtotalAmount: subtotalAmount ?? this.subtotalAmount,
     discountAmount: discountAmount ?? this.discountAmount,
     totalAmount: totalAmount ?? this.totalAmount,
+    taxableAmount: taxableAmount ?? this.taxableAmount,
+    totalTaxAmount: totalTaxAmount ?? this.totalTaxAmount,
+    cgstAmount: cgstAmount ?? this.cgstAmount,
+    sgstAmount: sgstAmount ?? this.sgstAmount,
     paidAmount: paidAmount ?? this.paidAmount,
     paymentMode: paymentMode ?? this.paymentMode,
     paymentStatus: paymentStatus ?? this.paymentStatus,
@@ -1322,6 +1460,18 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       totalAmount: data.totalAmount.present
           ? data.totalAmount.value
           : this.totalAmount,
+      taxableAmount: data.taxableAmount.present
+          ? data.taxableAmount.value
+          : this.taxableAmount,
+      totalTaxAmount: data.totalTaxAmount.present
+          ? data.totalTaxAmount.value
+          : this.totalTaxAmount,
+      cgstAmount: data.cgstAmount.present
+          ? data.cgstAmount.value
+          : this.cgstAmount,
+      sgstAmount: data.sgstAmount.present
+          ? data.sgstAmount.value
+          : this.sgstAmount,
       paidAmount: data.paidAmount.present
           ? data.paidAmount.value
           : this.paidAmount,
@@ -1346,6 +1496,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
           ..write('subtotalAmount: $subtotalAmount, ')
           ..write('discountAmount: $discountAmount, ')
           ..write('totalAmount: $totalAmount, ')
+          ..write('taxableAmount: $taxableAmount, ')
+          ..write('totalTaxAmount: $totalTaxAmount, ')
+          ..write('cgstAmount: $cgstAmount, ')
+          ..write('sgstAmount: $sgstAmount, ')
           ..write('paidAmount: $paidAmount, ')
           ..write('paymentMode: $paymentMode, ')
           ..write('paymentStatus: $paymentStatus, ')
@@ -1364,6 +1518,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     subtotalAmount,
     discountAmount,
     totalAmount,
+    taxableAmount,
+    totalTaxAmount,
+    cgstAmount,
+    sgstAmount,
     paidAmount,
     paymentMode,
     paymentStatus,
@@ -1381,6 +1539,10 @@ class Invoice extends DataClass implements Insertable<Invoice> {
           other.subtotalAmount == this.subtotalAmount &&
           other.discountAmount == this.discountAmount &&
           other.totalAmount == this.totalAmount &&
+          other.taxableAmount == this.taxableAmount &&
+          other.totalTaxAmount == this.totalTaxAmount &&
+          other.cgstAmount == this.cgstAmount &&
+          other.sgstAmount == this.sgstAmount &&
           other.paidAmount == this.paidAmount &&
           other.paymentMode == this.paymentMode &&
           other.paymentStatus == this.paymentStatus &&
@@ -1396,6 +1558,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
   final Value<double> subtotalAmount;
   final Value<double> discountAmount;
   final Value<double> totalAmount;
+  final Value<double> taxableAmount;
+  final Value<double> totalTaxAmount;
+  final Value<double> cgstAmount;
+  final Value<double> sgstAmount;
   final Value<double> paidAmount;
   final Value<PaymentMode> paymentMode;
   final Value<PaymentStatus> paymentStatus;
@@ -1409,6 +1575,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     this.subtotalAmount = const Value.absent(),
     this.discountAmount = const Value.absent(),
     this.totalAmount = const Value.absent(),
+    this.taxableAmount = const Value.absent(),
+    this.totalTaxAmount = const Value.absent(),
+    this.cgstAmount = const Value.absent(),
+    this.sgstAmount = const Value.absent(),
     this.paidAmount = const Value.absent(),
     this.paymentMode = const Value.absent(),
     this.paymentStatus = const Value.absent(),
@@ -1423,6 +1593,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     this.subtotalAmount = const Value.absent(),
     this.discountAmount = const Value.absent(),
     this.totalAmount = const Value.absent(),
+    this.taxableAmount = const Value.absent(),
+    this.totalTaxAmount = const Value.absent(),
+    this.cgstAmount = const Value.absent(),
+    this.sgstAmount = const Value.absent(),
     this.paidAmount = const Value.absent(),
     required PaymentMode paymentMode,
     required PaymentStatus paymentStatus,
@@ -1439,6 +1613,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     Expression<double>? subtotalAmount,
     Expression<double>? discountAmount,
     Expression<double>? totalAmount,
+    Expression<double>? taxableAmount,
+    Expression<double>? totalTaxAmount,
+    Expression<double>? cgstAmount,
+    Expression<double>? sgstAmount,
     Expression<double>? paidAmount,
     Expression<int>? paymentMode,
     Expression<int>? paymentStatus,
@@ -1453,6 +1631,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
       if (subtotalAmount != null) 'subtotal_amount': subtotalAmount,
       if (discountAmount != null) 'discount_amount': discountAmount,
       if (totalAmount != null) 'total_amount': totalAmount,
+      if (taxableAmount != null) 'taxable_amount': taxableAmount,
+      if (totalTaxAmount != null) 'total_tax_amount': totalTaxAmount,
+      if (cgstAmount != null) 'cgst_amount': cgstAmount,
+      if (sgstAmount != null) 'sgst_amount': sgstAmount,
       if (paidAmount != null) 'paid_amount': paidAmount,
       if (paymentMode != null) 'payment_mode': paymentMode,
       if (paymentStatus != null) 'payment_status': paymentStatus,
@@ -1469,6 +1651,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     Value<double>? subtotalAmount,
     Value<double>? discountAmount,
     Value<double>? totalAmount,
+    Value<double>? taxableAmount,
+    Value<double>? totalTaxAmount,
+    Value<double>? cgstAmount,
+    Value<double>? sgstAmount,
     Value<double>? paidAmount,
     Value<PaymentMode>? paymentMode,
     Value<PaymentStatus>? paymentStatus,
@@ -1483,6 +1669,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
       subtotalAmount: subtotalAmount ?? this.subtotalAmount,
       discountAmount: discountAmount ?? this.discountAmount,
       totalAmount: totalAmount ?? this.totalAmount,
+      taxableAmount: taxableAmount ?? this.taxableAmount,
+      totalTaxAmount: totalTaxAmount ?? this.totalTaxAmount,
+      cgstAmount: cgstAmount ?? this.cgstAmount,
+      sgstAmount: sgstAmount ?? this.sgstAmount,
       paidAmount: paidAmount ?? this.paidAmount,
       paymentMode: paymentMode ?? this.paymentMode,
       paymentStatus: paymentStatus ?? this.paymentStatus,
@@ -1512,6 +1702,18 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     }
     if (totalAmount.present) {
       map['total_amount'] = Variable<double>(totalAmount.value);
+    }
+    if (taxableAmount.present) {
+      map['taxable_amount'] = Variable<double>(taxableAmount.value);
+    }
+    if (totalTaxAmount.present) {
+      map['total_tax_amount'] = Variable<double>(totalTaxAmount.value);
+    }
+    if (cgstAmount.present) {
+      map['cgst_amount'] = Variable<double>(cgstAmount.value);
+    }
+    if (sgstAmount.present) {
+      map['sgst_amount'] = Variable<double>(sgstAmount.value);
     }
     if (paidAmount.present) {
       map['paid_amount'] = Variable<double>(paidAmount.value);
@@ -1547,6 +1749,10 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
           ..write('subtotalAmount: $subtotalAmount, ')
           ..write('discountAmount: $discountAmount, ')
           ..write('totalAmount: $totalAmount, ')
+          ..write('taxableAmount: $taxableAmount, ')
+          ..write('totalTaxAmount: $totalTaxAmount, ')
+          ..write('cgstAmount: $cgstAmount, ')
+          ..write('sgstAmount: $sgstAmount, ')
           ..write('paidAmount: $paidAmount, ')
           ..write('paymentMode: $paymentMode, ')
           ..write('paymentStatus: $paymentStatus, ')
@@ -1647,6 +1853,92 @@ class $InvoiceItemsTable extends InvoiceItems
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _hsnCodeMeta = const VerificationMeta(
+    'hsnCode',
+  );
+  @override
+  late final GeneratedColumn<String> hsnCode = GeneratedColumn<String>(
+    'hsn_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taxRateMeta = const VerificationMeta(
+    'taxRate',
+  );
+  @override
+  late final GeneratedColumn<double> taxRate = GeneratedColumn<double>(
+    'tax_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _taxableAmountMeta = const VerificationMeta(
+    'taxableAmount',
+  );
+  @override
+  late final GeneratedColumn<double> taxableAmount = GeneratedColumn<double>(
+    'taxable_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _taxAmountMeta = const VerificationMeta(
+    'taxAmount',
+  );
+  @override
+  late final GeneratedColumn<double> taxAmount = GeneratedColumn<double>(
+    'tax_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _cgstAmountMeta = const VerificationMeta(
+    'cgstAmount',
+  );
+  @override
+  late final GeneratedColumn<double> cgstAmount = GeneratedColumn<double>(
+    'cgst_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _sgstAmountMeta = const VerificationMeta(
+    'sgstAmount',
+  );
+  @override
+  late final GeneratedColumn<double> sgstAmount = GeneratedColumn<double>(
+    'sgst_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _isTaxInclusiveMeta = const VerificationMeta(
+    'isTaxInclusive',
+  );
+  @override
+  late final GeneratedColumn<bool> isTaxInclusive = GeneratedColumn<bool>(
+    'is_tax_inclusive',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_tax_inclusive" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _serialNoMeta = const VerificationMeta(
     'serialNo',
   );
@@ -1680,6 +1972,13 @@ class $InvoiceItemsTable extends InvoiceItems
     rate,
     total,
     discountAmount,
+    hsnCode,
+    taxRate,
+    taxableAmount,
+    taxAmount,
+    cgstAmount,
+    sgstAmount,
+    isTaxInclusive,
     serialNo,
     createdAt,
   ];
@@ -1747,6 +2046,54 @@ class $InvoiceItemsTable extends InvoiceItems
         ),
       );
     }
+    if (data.containsKey('hsn_code')) {
+      context.handle(
+        _hsnCodeMeta,
+        hsnCode.isAcceptableOrUnknown(data['hsn_code']!, _hsnCodeMeta),
+      );
+    }
+    if (data.containsKey('tax_rate')) {
+      context.handle(
+        _taxRateMeta,
+        taxRate.isAcceptableOrUnknown(data['tax_rate']!, _taxRateMeta),
+      );
+    }
+    if (data.containsKey('taxable_amount')) {
+      context.handle(
+        _taxableAmountMeta,
+        taxableAmount.isAcceptableOrUnknown(
+          data['taxable_amount']!,
+          _taxableAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tax_amount')) {
+      context.handle(
+        _taxAmountMeta,
+        taxAmount.isAcceptableOrUnknown(data['tax_amount']!, _taxAmountMeta),
+      );
+    }
+    if (data.containsKey('cgst_amount')) {
+      context.handle(
+        _cgstAmountMeta,
+        cgstAmount.isAcceptableOrUnknown(data['cgst_amount']!, _cgstAmountMeta),
+      );
+    }
+    if (data.containsKey('sgst_amount')) {
+      context.handle(
+        _sgstAmountMeta,
+        sgstAmount.isAcceptableOrUnknown(data['sgst_amount']!, _sgstAmountMeta),
+      );
+    }
+    if (data.containsKey('is_tax_inclusive')) {
+      context.handle(
+        _isTaxInclusiveMeta,
+        isTaxInclusive.isAcceptableOrUnknown(
+          data['is_tax_inclusive']!,
+          _isTaxInclusiveMeta,
+        ),
+      );
+    }
     if (data.containsKey('serial_no')) {
       context.handle(
         _serialNoMeta,
@@ -1796,6 +2143,34 @@ class $InvoiceItemsTable extends InvoiceItems
         DriftSqlType.double,
         data['${effectivePrefix}discount_amount'],
       )!,
+      hsnCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hsn_code'],
+      ),
+      taxRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tax_rate'],
+      )!,
+      taxableAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}taxable_amount'],
+      )!,
+      taxAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tax_amount'],
+      )!,
+      cgstAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cgst_amount'],
+      )!,
+      sgstAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sgst_amount'],
+      )!,
+      isTaxInclusive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_tax_inclusive'],
+      )!,
       serialNo: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}serial_no'],
@@ -1835,6 +2210,27 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
   /// Item-level discount (optional)
   final double discountAmount;
 
+  /// HSN / SAC Code
+  final String? hsnCode;
+
+  /// GST Tax Rate percentage (0, 5, 12, 18, 28)
+  final double taxRate;
+
+  /// Taxable value (base amount)
+  final double taxableAmount;
+
+  /// Total tax amount
+  final double taxAmount;
+
+  /// CGST amount
+  final double cgstAmount;
+
+  /// SGST amount
+  final double sgstAmount;
+
+  /// Whether the item rate is tax-inclusive (MRP)
+  final bool isTaxInclusive;
+
   /// Serial number for ordering within invoice
   final int serialNo;
 
@@ -1848,6 +2244,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
     required this.rate,
     required this.total,
     required this.discountAmount,
+    this.hsnCode,
+    required this.taxRate,
+    required this.taxableAmount,
+    required this.taxAmount,
+    required this.cgstAmount,
+    required this.sgstAmount,
+    required this.isTaxInclusive,
     required this.serialNo,
     required this.createdAt,
   });
@@ -1861,6 +2264,15 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
     map['rate'] = Variable<double>(rate);
     map['total'] = Variable<double>(total);
     map['discount_amount'] = Variable<double>(discountAmount);
+    if (!nullToAbsent || hsnCode != null) {
+      map['hsn_code'] = Variable<String>(hsnCode);
+    }
+    map['tax_rate'] = Variable<double>(taxRate);
+    map['taxable_amount'] = Variable<double>(taxableAmount);
+    map['tax_amount'] = Variable<double>(taxAmount);
+    map['cgst_amount'] = Variable<double>(cgstAmount);
+    map['sgst_amount'] = Variable<double>(sgstAmount);
+    map['is_tax_inclusive'] = Variable<bool>(isTaxInclusive);
     map['serial_no'] = Variable<int>(serialNo);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -1875,6 +2287,15 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
       rate: Value(rate),
       total: Value(total),
       discountAmount: Value(discountAmount),
+      hsnCode: hsnCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hsnCode),
+      taxRate: Value(taxRate),
+      taxableAmount: Value(taxableAmount),
+      taxAmount: Value(taxAmount),
+      cgstAmount: Value(cgstAmount),
+      sgstAmount: Value(sgstAmount),
+      isTaxInclusive: Value(isTaxInclusive),
       serialNo: Value(serialNo),
       createdAt: Value(createdAt),
     );
@@ -1893,6 +2314,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
       rate: serializer.fromJson<double>(json['rate']),
       total: serializer.fromJson<double>(json['total']),
       discountAmount: serializer.fromJson<double>(json['discountAmount']),
+      hsnCode: serializer.fromJson<String?>(json['hsnCode']),
+      taxRate: serializer.fromJson<double>(json['taxRate']),
+      taxableAmount: serializer.fromJson<double>(json['taxableAmount']),
+      taxAmount: serializer.fromJson<double>(json['taxAmount']),
+      cgstAmount: serializer.fromJson<double>(json['cgstAmount']),
+      sgstAmount: serializer.fromJson<double>(json['sgstAmount']),
+      isTaxInclusive: serializer.fromJson<bool>(json['isTaxInclusive']),
       serialNo: serializer.fromJson<int>(json['serialNo']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -1908,6 +2336,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
       'rate': serializer.toJson<double>(rate),
       'total': serializer.toJson<double>(total),
       'discountAmount': serializer.toJson<double>(discountAmount),
+      'hsnCode': serializer.toJson<String?>(hsnCode),
+      'taxRate': serializer.toJson<double>(taxRate),
+      'taxableAmount': serializer.toJson<double>(taxableAmount),
+      'taxAmount': serializer.toJson<double>(taxAmount),
+      'cgstAmount': serializer.toJson<double>(cgstAmount),
+      'sgstAmount': serializer.toJson<double>(sgstAmount),
+      'isTaxInclusive': serializer.toJson<bool>(isTaxInclusive),
       'serialNo': serializer.toJson<int>(serialNo),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -1921,6 +2356,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
     double? rate,
     double? total,
     double? discountAmount,
+    Value<String?> hsnCode = const Value.absent(),
+    double? taxRate,
+    double? taxableAmount,
+    double? taxAmount,
+    double? cgstAmount,
+    double? sgstAmount,
+    bool? isTaxInclusive,
     int? serialNo,
     DateTime? createdAt,
   }) => InvoiceItem(
@@ -1931,6 +2373,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
     rate: rate ?? this.rate,
     total: total ?? this.total,
     discountAmount: discountAmount ?? this.discountAmount,
+    hsnCode: hsnCode.present ? hsnCode.value : this.hsnCode,
+    taxRate: taxRate ?? this.taxRate,
+    taxableAmount: taxableAmount ?? this.taxableAmount,
+    taxAmount: taxAmount ?? this.taxAmount,
+    cgstAmount: cgstAmount ?? this.cgstAmount,
+    sgstAmount: sgstAmount ?? this.sgstAmount,
+    isTaxInclusive: isTaxInclusive ?? this.isTaxInclusive,
     serialNo: serialNo ?? this.serialNo,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -1945,6 +2394,21 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
       discountAmount: data.discountAmount.present
           ? data.discountAmount.value
           : this.discountAmount,
+      hsnCode: data.hsnCode.present ? data.hsnCode.value : this.hsnCode,
+      taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
+      taxableAmount: data.taxableAmount.present
+          ? data.taxableAmount.value
+          : this.taxableAmount,
+      taxAmount: data.taxAmount.present ? data.taxAmount.value : this.taxAmount,
+      cgstAmount: data.cgstAmount.present
+          ? data.cgstAmount.value
+          : this.cgstAmount,
+      sgstAmount: data.sgstAmount.present
+          ? data.sgstAmount.value
+          : this.sgstAmount,
+      isTaxInclusive: data.isTaxInclusive.present
+          ? data.isTaxInclusive.value
+          : this.isTaxInclusive,
       serialNo: data.serialNo.present ? data.serialNo.value : this.serialNo,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -1960,6 +2424,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
           ..write('rate: $rate, ')
           ..write('total: $total, ')
           ..write('discountAmount: $discountAmount, ')
+          ..write('hsnCode: $hsnCode, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('taxableAmount: $taxableAmount, ')
+          ..write('taxAmount: $taxAmount, ')
+          ..write('cgstAmount: $cgstAmount, ')
+          ..write('sgstAmount: $sgstAmount, ')
+          ..write('isTaxInclusive: $isTaxInclusive, ')
           ..write('serialNo: $serialNo, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1975,6 +2446,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
     rate,
     total,
     discountAmount,
+    hsnCode,
+    taxRate,
+    taxableAmount,
+    taxAmount,
+    cgstAmount,
+    sgstAmount,
+    isTaxInclusive,
     serialNo,
     createdAt,
   );
@@ -1989,6 +2467,13 @@ class InvoiceItem extends DataClass implements Insertable<InvoiceItem> {
           other.rate == this.rate &&
           other.total == this.total &&
           other.discountAmount == this.discountAmount &&
+          other.hsnCode == this.hsnCode &&
+          other.taxRate == this.taxRate &&
+          other.taxableAmount == this.taxableAmount &&
+          other.taxAmount == this.taxAmount &&
+          other.cgstAmount == this.cgstAmount &&
+          other.sgstAmount == this.sgstAmount &&
+          other.isTaxInclusive == this.isTaxInclusive &&
           other.serialNo == this.serialNo &&
           other.createdAt == this.createdAt);
 }
@@ -2001,6 +2486,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
   final Value<double> rate;
   final Value<double> total;
   final Value<double> discountAmount;
+  final Value<String?> hsnCode;
+  final Value<double> taxRate;
+  final Value<double> taxableAmount;
+  final Value<double> taxAmount;
+  final Value<double> cgstAmount;
+  final Value<double> sgstAmount;
+  final Value<bool> isTaxInclusive;
   final Value<int> serialNo;
   final Value<DateTime> createdAt;
   const InvoiceItemsCompanion({
@@ -2011,6 +2503,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
     this.rate = const Value.absent(),
     this.total = const Value.absent(),
     this.discountAmount = const Value.absent(),
+    this.hsnCode = const Value.absent(),
+    this.taxRate = const Value.absent(),
+    this.taxableAmount = const Value.absent(),
+    this.taxAmount = const Value.absent(),
+    this.cgstAmount = const Value.absent(),
+    this.sgstAmount = const Value.absent(),
+    this.isTaxInclusive = const Value.absent(),
     this.serialNo = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -2022,6 +2521,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
     required double rate,
     required double total,
     this.discountAmount = const Value.absent(),
+    this.hsnCode = const Value.absent(),
+    this.taxRate = const Value.absent(),
+    this.taxableAmount = const Value.absent(),
+    this.taxAmount = const Value.absent(),
+    this.cgstAmount = const Value.absent(),
+    this.sgstAmount = const Value.absent(),
+    this.isTaxInclusive = const Value.absent(),
     this.serialNo = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : invoiceId = Value(invoiceId),
@@ -2037,6 +2543,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
     Expression<double>? rate,
     Expression<double>? total,
     Expression<double>? discountAmount,
+    Expression<String>? hsnCode,
+    Expression<double>? taxRate,
+    Expression<double>? taxableAmount,
+    Expression<double>? taxAmount,
+    Expression<double>? cgstAmount,
+    Expression<double>? sgstAmount,
+    Expression<bool>? isTaxInclusive,
     Expression<int>? serialNo,
     Expression<DateTime>? createdAt,
   }) {
@@ -2048,6 +2561,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
       if (rate != null) 'rate': rate,
       if (total != null) 'total': total,
       if (discountAmount != null) 'discount_amount': discountAmount,
+      if (hsnCode != null) 'hsn_code': hsnCode,
+      if (taxRate != null) 'tax_rate': taxRate,
+      if (taxableAmount != null) 'taxable_amount': taxableAmount,
+      if (taxAmount != null) 'tax_amount': taxAmount,
+      if (cgstAmount != null) 'cgst_amount': cgstAmount,
+      if (sgstAmount != null) 'sgst_amount': sgstAmount,
+      if (isTaxInclusive != null) 'is_tax_inclusive': isTaxInclusive,
       if (serialNo != null) 'serial_no': serialNo,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -2061,6 +2581,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
     Value<double>? rate,
     Value<double>? total,
     Value<double>? discountAmount,
+    Value<String?>? hsnCode,
+    Value<double>? taxRate,
+    Value<double>? taxableAmount,
+    Value<double>? taxAmount,
+    Value<double>? cgstAmount,
+    Value<double>? sgstAmount,
+    Value<bool>? isTaxInclusive,
     Value<int>? serialNo,
     Value<DateTime>? createdAt,
   }) {
@@ -2072,6 +2599,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
       rate: rate ?? this.rate,
       total: total ?? this.total,
       discountAmount: discountAmount ?? this.discountAmount,
+      hsnCode: hsnCode ?? this.hsnCode,
+      taxRate: taxRate ?? this.taxRate,
+      taxableAmount: taxableAmount ?? this.taxableAmount,
+      taxAmount: taxAmount ?? this.taxAmount,
+      cgstAmount: cgstAmount ?? this.cgstAmount,
+      sgstAmount: sgstAmount ?? this.sgstAmount,
+      isTaxInclusive: isTaxInclusive ?? this.isTaxInclusive,
       serialNo: serialNo ?? this.serialNo,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -2101,6 +2635,27 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
     if (discountAmount.present) {
       map['discount_amount'] = Variable<double>(discountAmount.value);
     }
+    if (hsnCode.present) {
+      map['hsn_code'] = Variable<String>(hsnCode.value);
+    }
+    if (taxRate.present) {
+      map['tax_rate'] = Variable<double>(taxRate.value);
+    }
+    if (taxableAmount.present) {
+      map['taxable_amount'] = Variable<double>(taxableAmount.value);
+    }
+    if (taxAmount.present) {
+      map['tax_amount'] = Variable<double>(taxAmount.value);
+    }
+    if (cgstAmount.present) {
+      map['cgst_amount'] = Variable<double>(cgstAmount.value);
+    }
+    if (sgstAmount.present) {
+      map['sgst_amount'] = Variable<double>(sgstAmount.value);
+    }
+    if (isTaxInclusive.present) {
+      map['is_tax_inclusive'] = Variable<bool>(isTaxInclusive.value);
+    }
     if (serialNo.present) {
       map['serial_no'] = Variable<int>(serialNo.value);
     }
@@ -2120,6 +2675,13 @@ class InvoiceItemsCompanion extends UpdateCompanion<InvoiceItem> {
           ..write('rate: $rate, ')
           ..write('total: $total, ')
           ..write('discountAmount: $discountAmount, ')
+          ..write('hsnCode: $hsnCode, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('taxableAmount: $taxableAmount, ')
+          ..write('taxAmount: $taxAmount, ')
+          ..write('cgstAmount: $cgstAmount, ')
+          ..write('sgstAmount: $sgstAmount, ')
+          ..write('isTaxInclusive: $isTaxInclusive, ')
           ..write('serialNo: $serialNo, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -2274,6 +2836,48 @@ class $InventoryItemsTable extends InventoryItems
       ).withConverter<InventoryItemStatus>(
         $InventoryItemsTable.$converterstatus,
       );
+  static const VerificationMeta _hsnCodeMeta = const VerificationMeta(
+    'hsnCode',
+  );
+  @override
+  late final GeneratedColumn<String> hsnCode = GeneratedColumn<String>(
+    'hsn_code',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 20,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taxRateMeta = const VerificationMeta(
+    'taxRate',
+  );
+  @override
+  late final GeneratedColumn<double> taxRate = GeneratedColumn<double>(
+    'tax_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _isTaxInclusiveMeta = const VerificationMeta(
+    'isTaxInclusive',
+  );
+  @override
+  late final GeneratedColumn<bool> isTaxInclusive = GeneratedColumn<bool>(
+    'is_tax_inclusive',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_tax_inclusive" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2299,6 +2903,9 @@ class $InventoryItemsTable extends InventoryItems
     unitValue,
     imagePath,
     status,
+    hsnCode,
+    taxRate,
+    isTaxInclusive,
     createdAt,
   ];
   @override
@@ -2380,6 +2987,27 @@ class $InventoryItemsTable extends InventoryItems
         imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
       );
     }
+    if (data.containsKey('hsn_code')) {
+      context.handle(
+        _hsnCodeMeta,
+        hsnCode.isAcceptableOrUnknown(data['hsn_code']!, _hsnCodeMeta),
+      );
+    }
+    if (data.containsKey('tax_rate')) {
+      context.handle(
+        _taxRateMeta,
+        taxRate.isAcceptableOrUnknown(data['tax_rate']!, _taxRateMeta),
+      );
+    }
+    if (data.containsKey('is_tax_inclusive')) {
+      context.handle(
+        _isTaxInclusiveMeta,
+        isTaxInclusive.isAcceptableOrUnknown(
+          data['is_tax_inclusive']!,
+          _isTaxInclusiveMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2441,6 +3069,18 @@ class $InventoryItemsTable extends InventoryItems
           data['${effectivePrefix}status'],
         )!,
       ),
+      hsnCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hsn_code'],
+      ),
+      taxRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tax_rate'],
+      )!,
+      isTaxInclusive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_tax_inclusive'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2491,6 +3131,15 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
   /// Availability status
   final InventoryItemStatus status;
 
+  /// Optional HSN / SAC code reference
+  final String? hsnCode;
+
+  /// Tax / GST percentage (e.g. 0.0, 5.0, 12.0, 18.0, 28.0)
+  final double taxRate;
+
+  /// Whether selling price is tax-inclusive (MRP) or tax-exclusive (base rate)
+  final bool isTaxInclusive;
+
   /// Created timestamp
   final DateTime createdAt;
   const InventoryItem({
@@ -2505,6 +3154,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     required this.unitValue,
     this.imagePath,
     required this.status,
+    this.hsnCode,
+    required this.taxRate,
+    required this.isTaxInclusive,
     required this.createdAt,
   });
   @override
@@ -2529,6 +3181,11 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
         $InventoryItemsTable.$converterstatus.toSql(status),
       );
     }
+    if (!nullToAbsent || hsnCode != null) {
+      map['hsn_code'] = Variable<String>(hsnCode);
+    }
+    map['tax_rate'] = Variable<double>(taxRate);
+    map['is_tax_inclusive'] = Variable<bool>(isTaxInclusive);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -2550,6 +3207,11 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           ? const Value.absent()
           : Value(imagePath),
       status: Value(status),
+      hsnCode: hsnCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hsnCode),
+      taxRate: Value(taxRate),
+      isTaxInclusive: Value(isTaxInclusive),
       createdAt: Value(createdAt),
     );
   }
@@ -2573,6 +3235,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       status: $InventoryItemsTable.$converterstatus.fromJson(
         serializer.fromJson<int>(json['status']),
       ),
+      hsnCode: serializer.fromJson<String?>(json['hsnCode']),
+      taxRate: serializer.fromJson<double>(json['taxRate']),
+      isTaxInclusive: serializer.fromJson<bool>(json['isTaxInclusive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -2593,6 +3258,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       'status': serializer.toJson<int>(
         $InventoryItemsTable.$converterstatus.toJson(status),
       ),
+      'hsnCode': serializer.toJson<String?>(hsnCode),
+      'taxRate': serializer.toJson<double>(taxRate),
+      'isTaxInclusive': serializer.toJson<bool>(isTaxInclusive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -2609,6 +3277,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     double? unitValue,
     Value<String?> imagePath = const Value.absent(),
     InventoryItemStatus? status,
+    Value<String?> hsnCode = const Value.absent(),
+    double? taxRate,
+    bool? isTaxInclusive,
     DateTime? createdAt,
   }) => InventoryItem(
     id: id ?? this.id,
@@ -2622,6 +3293,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     unitValue: unitValue ?? this.unitValue,
     imagePath: imagePath.present ? imagePath.value : this.imagePath,
     status: status ?? this.status,
+    hsnCode: hsnCode.present ? hsnCode.value : this.hsnCode,
+    taxRate: taxRate ?? this.taxRate,
+    isTaxInclusive: isTaxInclusive ?? this.isTaxInclusive,
     createdAt: createdAt ?? this.createdAt,
   );
   InventoryItem copyWithCompanion(InventoryItemsCompanion data) {
@@ -2637,6 +3311,11 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       unitValue: data.unitValue.present ? data.unitValue.value : this.unitValue,
       imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
       status: data.status.present ? data.status.value : this.status,
+      hsnCode: data.hsnCode.present ? data.hsnCode.value : this.hsnCode,
+      taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
+      isTaxInclusive: data.isTaxInclusive.present
+          ? data.isTaxInclusive.value
+          : this.isTaxInclusive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -2655,6 +3334,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           ..write('unitValue: $unitValue, ')
           ..write('imagePath: $imagePath, ')
           ..write('status: $status, ')
+          ..write('hsnCode: $hsnCode, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('isTaxInclusive: $isTaxInclusive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2673,6 +3355,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     unitValue,
     imagePath,
     status,
+    hsnCode,
+    taxRate,
+    isTaxInclusive,
     createdAt,
   );
   @override
@@ -2690,6 +3375,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           other.unitValue == this.unitValue &&
           other.imagePath == this.imagePath &&
           other.status == this.status &&
+          other.hsnCode == this.hsnCode &&
+          other.taxRate == this.taxRate &&
+          other.isTaxInclusive == this.isTaxInclusive &&
           other.createdAt == this.createdAt);
 }
 
@@ -2705,6 +3393,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
   final Value<double> unitValue;
   final Value<String?> imagePath;
   final Value<InventoryItemStatus> status;
+  final Value<String?> hsnCode;
+  final Value<double> taxRate;
+  final Value<bool> isTaxInclusive;
   final Value<DateTime> createdAt;
   const InventoryItemsCompanion({
     this.id = const Value.absent(),
@@ -2718,6 +3409,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     this.unitValue = const Value.absent(),
     this.imagePath = const Value.absent(),
     this.status = const Value.absent(),
+    this.hsnCode = const Value.absent(),
+    this.taxRate = const Value.absent(),
+    this.isTaxInclusive = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   InventoryItemsCompanion.insert({
@@ -2732,6 +3426,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     this.unitValue = const Value.absent(),
     this.imagePath = const Value.absent(),
     this.status = const Value.absent(),
+    this.hsnCode = const Value.absent(),
+    this.taxRate = const Value.absent(),
+    this.isTaxInclusive = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : code = Value(code),
        name = Value(name),
@@ -2750,6 +3447,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Expression<double>? unitValue,
     Expression<String>? imagePath,
     Expression<int>? status,
+    Expression<String>? hsnCode,
+    Expression<double>? taxRate,
+    Expression<bool>? isTaxInclusive,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -2764,6 +3464,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       if (unitValue != null) 'unit_value': unitValue,
       if (imagePath != null) 'image_path': imagePath,
       if (status != null) 'status': status,
+      if (hsnCode != null) 'hsn_code': hsnCode,
+      if (taxRate != null) 'tax_rate': taxRate,
+      if (isTaxInclusive != null) 'is_tax_inclusive': isTaxInclusive,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -2780,6 +3483,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Value<double>? unitValue,
     Value<String?>? imagePath,
     Value<InventoryItemStatus>? status,
+    Value<String?>? hsnCode,
+    Value<double>? taxRate,
+    Value<bool>? isTaxInclusive,
     Value<DateTime>? createdAt,
   }) {
     return InventoryItemsCompanion(
@@ -2794,6 +3500,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       unitValue: unitValue ?? this.unitValue,
       imagePath: imagePath ?? this.imagePath,
       status: status ?? this.status,
+      hsnCode: hsnCode ?? this.hsnCode,
+      taxRate: taxRate ?? this.taxRate,
+      isTaxInclusive: isTaxInclusive ?? this.isTaxInclusive,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -2836,6 +3545,15 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
         $InventoryItemsTable.$converterstatus.toSql(status.value),
       );
     }
+    if (hsnCode.present) {
+      map['hsn_code'] = Variable<String>(hsnCode.value);
+    }
+    if (taxRate.present) {
+      map['tax_rate'] = Variable<double>(taxRate.value);
+    }
+    if (isTaxInclusive.present) {
+      map['is_tax_inclusive'] = Variable<bool>(isTaxInclusive.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2856,6 +3574,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
           ..write('unitValue: $unitValue, ')
           ..write('imagePath: $imagePath, ')
           ..write('status: $status, ')
+          ..write('hsnCode: $hsnCode, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('isTaxInclusive: $isTaxInclusive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -4182,6 +4903,634 @@ class LedgerEntriesCompanion extends UpdateCompanion<LedgerEntry> {
   }
 }
 
+class $HsnEntriesTable extends HsnEntries
+    with TableInfo<$HsnEntriesTable, HsnEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HsnEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _hsnCodeMeta = const VerificationMeta(
+    'hsnCode',
+  );
+  @override
+  late final GeneratedColumn<String> hsnCode = GeneratedColumn<String>(
+    'hsn_code',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 20,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 200,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _gstRateMeta = const VerificationMeta(
+    'gstRate',
+  );
+  @override
+  late final GeneratedColumn<double> gstRate = GeneratedColumn<double>(
+    'gst_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cgstRateMeta = const VerificationMeta(
+    'cgstRate',
+  );
+  @override
+  late final GeneratedColumn<double> cgstRate = GeneratedColumn<double>(
+    'cgst_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sgstRateMeta = const VerificationMeta(
+    'sgstRate',
+  );
+  @override
+  late final GeneratedColumn<double> sgstRate = GeneratedColumn<double>(
+    'sgst_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _igstRateMeta = const VerificationMeta(
+    'igstRate',
+  );
+  @override
+  late final GeneratedColumn<double> igstRate = GeneratedColumn<double>(
+    'igst_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    hsnCode,
+    description,
+    gstRate,
+    cgstRate,
+    sgstRate,
+    igstRate,
+    isDefault,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hsn_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HsnEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('hsn_code')) {
+      context.handle(
+        _hsnCodeMeta,
+        hsnCode.isAcceptableOrUnknown(data['hsn_code']!, _hsnCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hsnCodeMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('gst_rate')) {
+      context.handle(
+        _gstRateMeta,
+        gstRate.isAcceptableOrUnknown(data['gst_rate']!, _gstRateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_gstRateMeta);
+    }
+    if (data.containsKey('cgst_rate')) {
+      context.handle(
+        _cgstRateMeta,
+        cgstRate.isAcceptableOrUnknown(data['cgst_rate']!, _cgstRateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cgstRateMeta);
+    }
+    if (data.containsKey('sgst_rate')) {
+      context.handle(
+        _sgstRateMeta,
+        sgstRate.isAcceptableOrUnknown(data['sgst_rate']!, _sgstRateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sgstRateMeta);
+    }
+    if (data.containsKey('igst_rate')) {
+      context.handle(
+        _igstRateMeta,
+        igstRate.isAcceptableOrUnknown(data['igst_rate']!, _igstRateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_igstRateMeta);
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HsnEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HsnEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      hsnCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hsn_code'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      gstRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}gst_rate'],
+      )!,
+      cgstRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cgst_rate'],
+      )!,
+      sgstRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sgst_rate'],
+      )!,
+      igstRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}igst_rate'],
+      )!,
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HsnEntriesTable createAlias(String alias) {
+    return $HsnEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class HsnEntry extends DataClass implements Insertable<HsnEntry> {
+  /// Primary key - auto increment
+  final int id;
+
+  /// HSN / SAC code (e.g. "1001", "0808", "9983")
+  final String hsnCode;
+
+  /// Descriptive commodity or service name
+  final String description;
+
+  /// Total GST Rate percentage (e.g. 0.0, 5.0, 12.0, 18.0, 28.0)
+  final double gstRate;
+
+  /// Central GST Rate percentage (typically gstRate / 2)
+  final double cgstRate;
+
+  /// State GST Rate percentage (typically gstRate / 2)
+  final double sgstRate;
+
+  /// Integrated GST Rate percentage (typically gstRate)
+  final double igstRate;
+
+  /// Whether this is a system default entry
+  final bool isDefault;
+
+  /// Created timestamp
+  final DateTime createdAt;
+
+  /// Updated timestamp
+  final DateTime updatedAt;
+  const HsnEntry({
+    required this.id,
+    required this.hsnCode,
+    required this.description,
+    required this.gstRate,
+    required this.cgstRate,
+    required this.sgstRate,
+    required this.igstRate,
+    required this.isDefault,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['hsn_code'] = Variable<String>(hsnCode);
+    map['description'] = Variable<String>(description);
+    map['gst_rate'] = Variable<double>(gstRate);
+    map['cgst_rate'] = Variable<double>(cgstRate);
+    map['sgst_rate'] = Variable<double>(sgstRate);
+    map['igst_rate'] = Variable<double>(igstRate);
+    map['is_default'] = Variable<bool>(isDefault);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  HsnEntriesCompanion toCompanion(bool nullToAbsent) {
+    return HsnEntriesCompanion(
+      id: Value(id),
+      hsnCode: Value(hsnCode),
+      description: Value(description),
+      gstRate: Value(gstRate),
+      cgstRate: Value(cgstRate),
+      sgstRate: Value(sgstRate),
+      igstRate: Value(igstRate),
+      isDefault: Value(isDefault),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory HsnEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HsnEntry(
+      id: serializer.fromJson<int>(json['id']),
+      hsnCode: serializer.fromJson<String>(json['hsnCode']),
+      description: serializer.fromJson<String>(json['description']),
+      gstRate: serializer.fromJson<double>(json['gstRate']),
+      cgstRate: serializer.fromJson<double>(json['cgstRate']),
+      sgstRate: serializer.fromJson<double>(json['sgstRate']),
+      igstRate: serializer.fromJson<double>(json['igstRate']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'hsnCode': serializer.toJson<String>(hsnCode),
+      'description': serializer.toJson<String>(description),
+      'gstRate': serializer.toJson<double>(gstRate),
+      'cgstRate': serializer.toJson<double>(cgstRate),
+      'sgstRate': serializer.toJson<double>(sgstRate),
+      'igstRate': serializer.toJson<double>(igstRate),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  HsnEntry copyWith({
+    int? id,
+    String? hsnCode,
+    String? description,
+    double? gstRate,
+    double? cgstRate,
+    double? sgstRate,
+    double? igstRate,
+    bool? isDefault,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => HsnEntry(
+    id: id ?? this.id,
+    hsnCode: hsnCode ?? this.hsnCode,
+    description: description ?? this.description,
+    gstRate: gstRate ?? this.gstRate,
+    cgstRate: cgstRate ?? this.cgstRate,
+    sgstRate: sgstRate ?? this.sgstRate,
+    igstRate: igstRate ?? this.igstRate,
+    isDefault: isDefault ?? this.isDefault,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  HsnEntry copyWithCompanion(HsnEntriesCompanion data) {
+    return HsnEntry(
+      id: data.id.present ? data.id.value : this.id,
+      hsnCode: data.hsnCode.present ? data.hsnCode.value : this.hsnCode,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      gstRate: data.gstRate.present ? data.gstRate.value : this.gstRate,
+      cgstRate: data.cgstRate.present ? data.cgstRate.value : this.cgstRate,
+      sgstRate: data.sgstRate.present ? data.sgstRate.value : this.sgstRate,
+      igstRate: data.igstRate.present ? data.igstRate.value : this.igstRate,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HsnEntry(')
+          ..write('id: $id, ')
+          ..write('hsnCode: $hsnCode, ')
+          ..write('description: $description, ')
+          ..write('gstRate: $gstRate, ')
+          ..write('cgstRate: $cgstRate, ')
+          ..write('sgstRate: $sgstRate, ')
+          ..write('igstRate: $igstRate, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    hsnCode,
+    description,
+    gstRate,
+    cgstRate,
+    sgstRate,
+    igstRate,
+    isDefault,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HsnEntry &&
+          other.id == this.id &&
+          other.hsnCode == this.hsnCode &&
+          other.description == this.description &&
+          other.gstRate == this.gstRate &&
+          other.cgstRate == this.cgstRate &&
+          other.sgstRate == this.sgstRate &&
+          other.igstRate == this.igstRate &&
+          other.isDefault == this.isDefault &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class HsnEntriesCompanion extends UpdateCompanion<HsnEntry> {
+  final Value<int> id;
+  final Value<String> hsnCode;
+  final Value<String> description;
+  final Value<double> gstRate;
+  final Value<double> cgstRate;
+  final Value<double> sgstRate;
+  final Value<double> igstRate;
+  final Value<bool> isDefault;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const HsnEntriesCompanion({
+    this.id = const Value.absent(),
+    this.hsnCode = const Value.absent(),
+    this.description = const Value.absent(),
+    this.gstRate = const Value.absent(),
+    this.cgstRate = const Value.absent(),
+    this.sgstRate = const Value.absent(),
+    this.igstRate = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  HsnEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String hsnCode,
+    required String description,
+    required double gstRate,
+    required double cgstRate,
+    required double sgstRate,
+    required double igstRate,
+    this.isDefault = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : hsnCode = Value(hsnCode),
+       description = Value(description),
+       gstRate = Value(gstRate),
+       cgstRate = Value(cgstRate),
+       sgstRate = Value(sgstRate),
+       igstRate = Value(igstRate);
+  static Insertable<HsnEntry> custom({
+    Expression<int>? id,
+    Expression<String>? hsnCode,
+    Expression<String>? description,
+    Expression<double>? gstRate,
+    Expression<double>? cgstRate,
+    Expression<double>? sgstRate,
+    Expression<double>? igstRate,
+    Expression<bool>? isDefault,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hsnCode != null) 'hsn_code': hsnCode,
+      if (description != null) 'description': description,
+      if (gstRate != null) 'gst_rate': gstRate,
+      if (cgstRate != null) 'cgst_rate': cgstRate,
+      if (sgstRate != null) 'sgst_rate': sgstRate,
+      if (igstRate != null) 'igst_rate': igstRate,
+      if (isDefault != null) 'is_default': isDefault,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  HsnEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? hsnCode,
+    Value<String>? description,
+    Value<double>? gstRate,
+    Value<double>? cgstRate,
+    Value<double>? sgstRate,
+    Value<double>? igstRate,
+    Value<bool>? isDefault,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return HsnEntriesCompanion(
+      id: id ?? this.id,
+      hsnCode: hsnCode ?? this.hsnCode,
+      description: description ?? this.description,
+      gstRate: gstRate ?? this.gstRate,
+      cgstRate: cgstRate ?? this.cgstRate,
+      sgstRate: sgstRate ?? this.sgstRate,
+      igstRate: igstRate ?? this.igstRate,
+      isDefault: isDefault ?? this.isDefault,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (hsnCode.present) {
+      map['hsn_code'] = Variable<String>(hsnCode.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (gstRate.present) {
+      map['gst_rate'] = Variable<double>(gstRate.value);
+    }
+    if (cgstRate.present) {
+      map['cgst_rate'] = Variable<double>(cgstRate.value);
+    }
+    if (sgstRate.present) {
+      map['sgst_rate'] = Variable<double>(sgstRate.value);
+    }
+    if (igstRate.present) {
+      map['igst_rate'] = Variable<double>(igstRate.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HsnEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('hsnCode: $hsnCode, ')
+          ..write('description: $description, ')
+          ..write('gstRate: $gstRate, ')
+          ..write('cgstRate: $cgstRate, ')
+          ..write('sgstRate: $sgstRate, ')
+          ..write('igstRate: $igstRate, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4194,6 +5543,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DocumentSeriesNumbersTable(this);
   late final $VouchersTable vouchers = $VouchersTable(this);
   late final $LedgerEntriesTable ledgerEntries = $LedgerEntriesTable(this);
+  late final $HsnEntriesTable hsnEntries = $HsnEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4207,6 +5557,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     documentSeriesNumbers,
     vouchers,
     ledgerEntries,
+    hsnEntries,
   ];
 }
 
@@ -5048,6 +6399,10 @@ typedef $$InvoicesTableCreateCompanionBuilder =
       Value<double> subtotalAmount,
       Value<double> discountAmount,
       Value<double> totalAmount,
+      Value<double> taxableAmount,
+      Value<double> totalTaxAmount,
+      Value<double> cgstAmount,
+      Value<double> sgstAmount,
       Value<double> paidAmount,
       required PaymentMode paymentMode,
       required PaymentStatus paymentStatus,
@@ -5063,6 +6418,10 @@ typedef $$InvoicesTableUpdateCompanionBuilder =
       Value<double> subtotalAmount,
       Value<double> discountAmount,
       Value<double> totalAmount,
+      Value<double> taxableAmount,
+      Value<double> totalTaxAmount,
+      Value<double> cgstAmount,
+      Value<double> sgstAmount,
       Value<double> paidAmount,
       Value<PaymentMode> paymentMode,
       Value<PaymentStatus> paymentStatus,
@@ -5142,6 +6501,26 @@ class $$InvoicesTableFilterComposer
 
   ColumnFilters<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxableAmount => $composableBuilder(
+    column: $table.taxableAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalTaxAmount => $composableBuilder(
+    column: $table.totalTaxAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cgstAmount => $composableBuilder(
+    column: $table.cgstAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sgstAmount => $composableBuilder(
+    column: $table.sgstAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5260,6 +6639,26 @@ class $$InvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get taxableAmount => $composableBuilder(
+    column: $table.taxableAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalTaxAmount => $composableBuilder(
+    column: $table.totalTaxAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cgstAmount => $composableBuilder(
+    column: $table.cgstAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sgstAmount => $composableBuilder(
+    column: $table.sgstAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get paidAmount => $composableBuilder(
     column: $table.paidAmount,
     builder: (column) => ColumnOrderings(column),
@@ -5341,6 +6740,26 @@ class $$InvoicesTableAnnotationComposer
 
   GeneratedColumn<double> get totalAmount => $composableBuilder(
     column: $table.totalAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get taxableAmount => $composableBuilder(
+    column: $table.taxableAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalTaxAmount => $composableBuilder(
+    column: $table.totalTaxAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get cgstAmount => $composableBuilder(
+    column: $table.cgstAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sgstAmount => $composableBuilder(
+    column: $table.sgstAmount,
     builder: (column) => column,
   );
 
@@ -5453,6 +6872,10 @@ class $$InvoicesTableTableManager
                 Value<double> subtotalAmount = const Value.absent(),
                 Value<double> discountAmount = const Value.absent(),
                 Value<double> totalAmount = const Value.absent(),
+                Value<double> taxableAmount = const Value.absent(),
+                Value<double> totalTaxAmount = const Value.absent(),
+                Value<double> cgstAmount = const Value.absent(),
+                Value<double> sgstAmount = const Value.absent(),
                 Value<double> paidAmount = const Value.absent(),
                 Value<PaymentMode> paymentMode = const Value.absent(),
                 Value<PaymentStatus> paymentStatus = const Value.absent(),
@@ -5466,6 +6889,10 @@ class $$InvoicesTableTableManager
                 subtotalAmount: subtotalAmount,
                 discountAmount: discountAmount,
                 totalAmount: totalAmount,
+                taxableAmount: taxableAmount,
+                totalTaxAmount: totalTaxAmount,
+                cgstAmount: cgstAmount,
+                sgstAmount: sgstAmount,
                 paidAmount: paidAmount,
                 paymentMode: paymentMode,
                 paymentStatus: paymentStatus,
@@ -5481,6 +6908,10 @@ class $$InvoicesTableTableManager
                 Value<double> subtotalAmount = const Value.absent(),
                 Value<double> discountAmount = const Value.absent(),
                 Value<double> totalAmount = const Value.absent(),
+                Value<double> taxableAmount = const Value.absent(),
+                Value<double> totalTaxAmount = const Value.absent(),
+                Value<double> cgstAmount = const Value.absent(),
+                Value<double> sgstAmount = const Value.absent(),
                 Value<double> paidAmount = const Value.absent(),
                 required PaymentMode paymentMode,
                 required PaymentStatus paymentStatus,
@@ -5494,6 +6925,10 @@ class $$InvoicesTableTableManager
                 subtotalAmount: subtotalAmount,
                 discountAmount: discountAmount,
                 totalAmount: totalAmount,
+                taxableAmount: taxableAmount,
+                totalTaxAmount: totalTaxAmount,
+                cgstAmount: cgstAmount,
+                sgstAmount: sgstAmount,
                 paidAmount: paidAmount,
                 paymentMode: paymentMode,
                 paymentStatus: paymentStatus,
@@ -5602,6 +7037,13 @@ typedef $$InvoiceItemsTableCreateCompanionBuilder =
       required double rate,
       required double total,
       Value<double> discountAmount,
+      Value<String?> hsnCode,
+      Value<double> taxRate,
+      Value<double> taxableAmount,
+      Value<double> taxAmount,
+      Value<double> cgstAmount,
+      Value<double> sgstAmount,
+      Value<bool> isTaxInclusive,
       Value<int> serialNo,
       Value<DateTime> createdAt,
     });
@@ -5614,6 +7056,13 @@ typedef $$InvoiceItemsTableUpdateCompanionBuilder =
       Value<double> rate,
       Value<double> total,
       Value<double> discountAmount,
+      Value<String?> hsnCode,
+      Value<double> taxRate,
+      Value<double> taxableAmount,
+      Value<double> taxAmount,
+      Value<double> cgstAmount,
+      Value<double> sgstAmount,
+      Value<bool> isTaxInclusive,
       Value<int> serialNo,
       Value<DateTime> createdAt,
     });
@@ -5676,6 +7125,41 @@ class $$InvoiceItemsTableFilterComposer
 
   ColumnFilters<double> get discountAmount => $composableBuilder(
     column: $table.discountAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxableAmount => $composableBuilder(
+    column: $table.taxableAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxAmount => $composableBuilder(
+    column: $table.taxAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cgstAmount => $composableBuilder(
+    column: $table.cgstAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sgstAmount => $composableBuilder(
+    column: $table.sgstAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5752,6 +7236,41 @@ class $$InvoiceItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get taxableAmount => $composableBuilder(
+    column: $table.taxableAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get taxAmount => $composableBuilder(
+    column: $table.taxAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cgstAmount => $composableBuilder(
+    column: $table.cgstAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sgstAmount => $composableBuilder(
+    column: $table.sgstAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get serialNo => $composableBuilder(
     column: $table.serialNo,
     builder: (column) => ColumnOrderings(column),
@@ -5812,6 +7331,35 @@ class $$InvoiceItemsTableAnnotationComposer
 
   GeneratedColumn<double> get discountAmount => $composableBuilder(
     column: $table.discountAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hsnCode =>
+      $composableBuilder(column: $table.hsnCode, builder: (column) => column);
+
+  GeneratedColumn<double> get taxRate =>
+      $composableBuilder(column: $table.taxRate, builder: (column) => column);
+
+  GeneratedColumn<double> get taxableAmount => $composableBuilder(
+    column: $table.taxableAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get taxAmount =>
+      $composableBuilder(column: $table.taxAmount, builder: (column) => column);
+
+  GeneratedColumn<double> get cgstAmount => $composableBuilder(
+    column: $table.cgstAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sgstAmount => $composableBuilder(
+    column: $table.sgstAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
     builder: (column) => column,
   );
 
@@ -5880,6 +7428,13 @@ class $$InvoiceItemsTableTableManager
                 Value<double> rate = const Value.absent(),
                 Value<double> total = const Value.absent(),
                 Value<double> discountAmount = const Value.absent(),
+                Value<String?> hsnCode = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
+                Value<double> taxableAmount = const Value.absent(),
+                Value<double> taxAmount = const Value.absent(),
+                Value<double> cgstAmount = const Value.absent(),
+                Value<double> sgstAmount = const Value.absent(),
+                Value<bool> isTaxInclusive = const Value.absent(),
                 Value<int> serialNo = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => InvoiceItemsCompanion(
@@ -5890,6 +7445,13 @@ class $$InvoiceItemsTableTableManager
                 rate: rate,
                 total: total,
                 discountAmount: discountAmount,
+                hsnCode: hsnCode,
+                taxRate: taxRate,
+                taxableAmount: taxableAmount,
+                taxAmount: taxAmount,
+                cgstAmount: cgstAmount,
+                sgstAmount: sgstAmount,
+                isTaxInclusive: isTaxInclusive,
                 serialNo: serialNo,
                 createdAt: createdAt,
               ),
@@ -5902,6 +7464,13 @@ class $$InvoiceItemsTableTableManager
                 required double rate,
                 required double total,
                 Value<double> discountAmount = const Value.absent(),
+                Value<String?> hsnCode = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
+                Value<double> taxableAmount = const Value.absent(),
+                Value<double> taxAmount = const Value.absent(),
+                Value<double> cgstAmount = const Value.absent(),
+                Value<double> sgstAmount = const Value.absent(),
+                Value<bool> isTaxInclusive = const Value.absent(),
                 Value<int> serialNo = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => InvoiceItemsCompanion.insert(
@@ -5912,6 +7481,13 @@ class $$InvoiceItemsTableTableManager
                 rate: rate,
                 total: total,
                 discountAmount: discountAmount,
+                hsnCode: hsnCode,
+                taxRate: taxRate,
+                taxableAmount: taxableAmount,
+                taxAmount: taxAmount,
+                cgstAmount: cgstAmount,
+                sgstAmount: sgstAmount,
+                isTaxInclusive: isTaxInclusive,
                 serialNo: serialNo,
                 createdAt: createdAt,
               ),
@@ -5995,6 +7571,9 @@ typedef $$InventoryItemsTableCreateCompanionBuilder =
       Value<double> unitValue,
       Value<String?> imagePath,
       Value<InventoryItemStatus> status,
+      Value<String?> hsnCode,
+      Value<double> taxRate,
+      Value<bool> isTaxInclusive,
       Value<DateTime> createdAt,
     });
 typedef $$InventoryItemsTableUpdateCompanionBuilder =
@@ -6010,6 +7589,9 @@ typedef $$InventoryItemsTableUpdateCompanionBuilder =
       Value<double> unitValue,
       Value<String?> imagePath,
       Value<InventoryItemStatus> status,
+      Value<String?> hsnCode,
+      Value<double> taxRate,
+      Value<bool> isTaxInclusive,
       Value<DateTime> createdAt,
     });
 
@@ -6076,6 +7658,21 @@ class $$InventoryItemsTableFilterComposer
   get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
+    builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
@@ -6148,6 +7745,21 @@ class $$InventoryItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6195,6 +7807,17 @@ class $$InventoryItemsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<InventoryItemStatus, int> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get hsnCode =>
+      $composableBuilder(column: $table.hsnCode, builder: (column) => column);
+
+  GeneratedColumn<double> get taxRate =>
+      $composableBuilder(column: $table.taxRate, builder: (column) => column);
+
+  GeneratedColumn<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6244,6 +7867,9 @@ class $$InventoryItemsTableTableManager
                 Value<double> unitValue = const Value.absent(),
                 Value<String?> imagePath = const Value.absent(),
                 Value<InventoryItemStatus> status = const Value.absent(),
+                Value<String?> hsnCode = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
+                Value<bool> isTaxInclusive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => InventoryItemsCompanion(
                 id: id,
@@ -6257,6 +7883,9 @@ class $$InventoryItemsTableTableManager
                 unitValue: unitValue,
                 imagePath: imagePath,
                 status: status,
+                hsnCode: hsnCode,
+                taxRate: taxRate,
+                isTaxInclusive: isTaxInclusive,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -6272,6 +7901,9 @@ class $$InventoryItemsTableTableManager
                 Value<double> unitValue = const Value.absent(),
                 Value<String?> imagePath = const Value.absent(),
                 Value<InventoryItemStatus> status = const Value.absent(),
+                Value<String?> hsnCode = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
+                Value<bool> isTaxInclusive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => InventoryItemsCompanion.insert(
                 id: id,
@@ -6285,6 +7917,9 @@ class $$InventoryItemsTableTableManager
                 unitValue: unitValue,
                 imagePath: imagePath,
                 status: status,
+                hsnCode: hsnCode,
+                taxRate: taxRate,
+                isTaxInclusive: isTaxInclusive,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -7323,6 +8958,291 @@ typedef $$LedgerEntriesTableProcessedTableManager =
       LedgerEntry,
       PrefetchHooks Function({bool voucherId, bool ledgerId})
     >;
+typedef $$HsnEntriesTableCreateCompanionBuilder =
+    HsnEntriesCompanion Function({
+      Value<int> id,
+      required String hsnCode,
+      required String description,
+      required double gstRate,
+      required double cgstRate,
+      required double sgstRate,
+      required double igstRate,
+      Value<bool> isDefault,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$HsnEntriesTableUpdateCompanionBuilder =
+    HsnEntriesCompanion Function({
+      Value<int> id,
+      Value<String> hsnCode,
+      Value<String> description,
+      Value<double> gstRate,
+      Value<double> cgstRate,
+      Value<double> sgstRate,
+      Value<double> igstRate,
+      Value<bool> isDefault,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$HsnEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $HsnEntriesTable> {
+  $$HsnEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get gstRate => $composableBuilder(
+    column: $table.gstRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cgstRate => $composableBuilder(
+    column: $table.cgstRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sgstRate => $composableBuilder(
+    column: $table.sgstRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get igstRate => $composableBuilder(
+    column: $table.igstRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HsnEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $HsnEntriesTable> {
+  $$HsnEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get gstRate => $composableBuilder(
+    column: $table.gstRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cgstRate => $composableBuilder(
+    column: $table.cgstRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sgstRate => $composableBuilder(
+    column: $table.sgstRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get igstRate => $composableBuilder(
+    column: $table.igstRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HsnEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HsnEntriesTable> {
+  $$HsnEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get hsnCode =>
+      $composableBuilder(column: $table.hsnCode, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get gstRate =>
+      $composableBuilder(column: $table.gstRate, builder: (column) => column);
+
+  GeneratedColumn<double> get cgstRate =>
+      $composableBuilder(column: $table.cgstRate, builder: (column) => column);
+
+  GeneratedColumn<double> get sgstRate =>
+      $composableBuilder(column: $table.sgstRate, builder: (column) => column);
+
+  GeneratedColumn<double> get igstRate =>
+      $composableBuilder(column: $table.igstRate, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$HsnEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HsnEntriesTable,
+          HsnEntry,
+          $$HsnEntriesTableFilterComposer,
+          $$HsnEntriesTableOrderingComposer,
+          $$HsnEntriesTableAnnotationComposer,
+          $$HsnEntriesTableCreateCompanionBuilder,
+          $$HsnEntriesTableUpdateCompanionBuilder,
+          (HsnEntry, BaseReferences<_$AppDatabase, $HsnEntriesTable, HsnEntry>),
+          HsnEntry,
+          PrefetchHooks Function()
+        > {
+  $$HsnEntriesTableTableManager(_$AppDatabase db, $HsnEntriesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HsnEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HsnEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HsnEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> hsnCode = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<double> gstRate = const Value.absent(),
+                Value<double> cgstRate = const Value.absent(),
+                Value<double> sgstRate = const Value.absent(),
+                Value<double> igstRate = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => HsnEntriesCompanion(
+                id: id,
+                hsnCode: hsnCode,
+                description: description,
+                gstRate: gstRate,
+                cgstRate: cgstRate,
+                sgstRate: sgstRate,
+                igstRate: igstRate,
+                isDefault: isDefault,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String hsnCode,
+                required String description,
+                required double gstRate,
+                required double cgstRate,
+                required double sgstRate,
+                required double igstRate,
+                Value<bool> isDefault = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => HsnEntriesCompanion.insert(
+                id: id,
+                hsnCode: hsnCode,
+                description: description,
+                gstRate: gstRate,
+                cgstRate: cgstRate,
+                sgstRate: sgstRate,
+                igstRate: igstRate,
+                isDefault: isDefault,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HsnEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HsnEntriesTable,
+      HsnEntry,
+      $$HsnEntriesTableFilterComposer,
+      $$HsnEntriesTableOrderingComposer,
+      $$HsnEntriesTableAnnotationComposer,
+      $$HsnEntriesTableCreateCompanionBuilder,
+      $$HsnEntriesTableUpdateCompanionBuilder,
+      (HsnEntry, BaseReferences<_$AppDatabase, $HsnEntriesTable, HsnEntry>),
+      HsnEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7343,4 +9263,6 @@ class $AppDatabaseManager {
       $$VouchersTableTableManager(_db, _db.vouchers);
   $$LedgerEntriesTableTableManager get ledgerEntries =>
       $$LedgerEntriesTableTableManager(_db, _db.ledgerEntries);
+  $$HsnEntriesTableTableManager get hsnEntries =>
+      $$HsnEntriesTableTableManager(_db, _db.hsnEntries);
 }

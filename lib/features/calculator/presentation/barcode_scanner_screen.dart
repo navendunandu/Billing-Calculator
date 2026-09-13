@@ -121,6 +121,9 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen> {
         name: matchingItem.name,
         quantity: 1,
         rate: matchingItem.price,
+        hsnCode: matchingItem.hsnCode,
+        taxRate: matchingItem.taxRate,
+        isTaxInclusive: matchingItem.isTaxInclusive,
       ),
     );
 
@@ -553,9 +556,31 @@ class _ScannerBillItemTile extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: Text(
-          '${CurrencyFormatter.formatQuantity(item.quantity)} × ${CurrencyFormatter.formatWithoutSymbol(item.rate)}',
-          style: theme.textTheme.labelSmall,
+        subtitle: Row(
+          children: [
+            Text(
+              '${CurrencyFormatter.formatQuantity(item.quantity)} × ${CurrencyFormatter.formatWithoutSymbol(item.rate)}',
+              style: theme.textTheme.labelSmall,
+            ),
+            if (item.hasTax) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}% GST',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
