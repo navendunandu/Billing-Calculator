@@ -15,6 +15,7 @@ import '../../../core/widgets/confirmation_dialog.dart';
 import '../domain/inventory_item_model.dart';
 import '../../hsn/presentation/manage_hsn_screen.dart';
 import '../../categories/presentation/widgets/category_picker_modal.dart';
+import '../../brands/presentation/providers/brand_providers.dart';
 import 'providers/inventory_providers.dart';
 
 class InventoryItemFormScreen extends ConsumerStatefulWidget {
@@ -40,6 +41,9 @@ class _InventoryItemFormScreenState
   late final TextEditingController _unitValueController;
   late final TextEditingController _brandController;
   late final TextEditingController _imagePathController;
+  late final FocusNode _brandFocusNode;
+  final _brandFieldKey = GlobalKey();
+  bool _showBrandSuggestions = false;
 
   String? _selectedCategory;
   InventoryUom _selectedUom = InventoryUom.pcs;
@@ -59,11 +63,41 @@ class _InventoryItemFormScreenState
     _unitValueController = TextEditingController(text: '1');
     _brandController = TextEditingController();
     _imagePathController = TextEditingController();
+    _brandFocusNode = FocusNode();
+    _brandFocusNode.addListener(_onBrandFocusChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(brandManagerProvider.notifier).loadBrands();
+    });
 
     if (widget.isEditing) {
       _loadItem();
     } else {
       _loadNextItemCode();
+    }
+  }
+
+  void _onBrandFocusChanged() {
+    if (_brandFocusNode.hasFocus) {
+      if (_brandController.text.trim().isNotEmpty) {
+        setState(() => _showBrandSuggestions = true);
+      }
+      Future.delayed(const Duration(milliseconds: 250), () {
+        if (mounted && _brandFieldKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _brandFieldKey.currentContext!,
+            alignment: 0.2,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    } else {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_brandFocusNode.hasFocus) {
+          setState(() => _showBrandSuggestions = false);
+        }
+      });
     }
   }
 
@@ -133,12 +167,15 @@ class _InventoryItemFormScreenState
     _unitValueController.dispose();
     _brandController.dispose();
     _imagePathController.dispose();
+    _brandFocusNode.removeListener(_onBrandFocusChanged);
+    _brandFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inventoryManagerProvider);
+    final brandState = ref.watch(brandManagerProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -150,7 +187,12 @@ class _InventoryItemFormScreenState
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSizes.paddingLarge),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.paddingLarge,
+                  AppSizes.paddingLarge,
+                  AppSizes.paddingLarge,
+                  AppSizes.paddingLarge + 60,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -161,7 +203,8 @@ class _InventoryItemFormScreenState
                         imagePath: _imagePathController.text,
                         onTap: _showImagePickerModal,
                         onPickFromCamera: () => _pickImage(ImageSource.camera),
-                        onPickFromGallery: () => _pickImage(ImageSource.gallery),
+                        onPickFromGallery: () =>
+                            _pickImage(ImageSource.gallery),
                         onRemove: _clearImage,
                       ),
                       const SizedBox(height: AppSizes.spacingLarge),
@@ -252,69 +295,274 @@ class _InventoryItemFormScreenState
                       ),
                       const SizedBox(height: AppSizes.spacingLarge),
 
-                      // Section 2: Pricing & Measurement
+                      // Section 2: Categorization & Brand
+                      const _SectionHeader(
+                        title: 'Categorization & Brand',
+                        icon: Icons.category_outlined,
+                      ),
+                      FormField<String>(
+                        initialValue: _selectedCategory,
+                        validator: (value) {
+                          if ((_selectedCategory ?? '').trim().isEmpty) {
+                            return 'Category is required';
+                          }
+                          return null;
+                        },
+                        builder: (fieldState) {
+                          final hasCategory =
+                              _selectedCategory != null &&
+                              _selectedCategory!.trim().isNotEmpty;
+                          return InkWell(
+                            onTap: () async {
+                              final selected = await showCategoryPickerModal(
+                                context,
+                                ref,
+                                selectedCategory: _selectedCategory,
+                              );
+                              if (selected != null) {
+                                setState(() => _selectedCategory = selected);
+                                fieldState.didChange(selected);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusMedium,
+                            ),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: 'Category *',
+                                hintText: 'Select or search category',
+                                prefixIcon: const Icon(Icons.category_outlined),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (hasCategory)
+                                      IconButton(
+                                        icon: const Icon(Icons.clear, size: 18),
+                                        tooltip: 'Clear category',
+                                        onPressed: () {
+                                          setState(
+                                            () => _selectedCategory = null,
+                                          );
+                                          fieldState.didChange(null);
+                                        },
+                                      ),
+                                    const Icon(Icons.arrow_drop_down),
+                                    const SizedBox(width: 8),
+                                  ],
+                                ),
+                                errorText: fieldState.errorText,
+                              ),
+                              child: Text(
+                                hasCategory
+                                    ? _selectedCategory!
+                                    : 'Select or search category',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: hasCategory
+                                      ? theme.colorScheme.onSurface
+                                      : theme.hintColor,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: AppSizes.spacingMedium),
+
+                      Builder(
+                        builder: (context) {
+                          final query = _brandController.text
+                              .trim()
+                              .toLowerCase();
+                          final matchingBrands = query.isEmpty
+                              ? <String>[]
+                              : brandState.brands
+                                    .map((b) => b.name)
+                                    .where(
+                                      (name) =>
+                                          name.toLowerCase().contains(query),
+                                    )
+                                    .toList();
+
+                          return Column(
+                            key: _brandFieldKey,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                controller: _brandController,
+                                focusNode: _brandFocusNode,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: 'Brand *',
+                                  hintText: 'e.g., Farm Fresh',
+                                  prefixIcon: const Icon(
+                                    Icons.business_outlined,
+                                  ),
+                                  suffixIcon: _brandController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(
+                                            Icons.clear,
+                                            size: 18,
+                                          ),
+                                          tooltip: 'Clear brand',
+                                          onPressed: () {
+                                            setState(() {
+                                              _brandController.clear();
+                                              _showBrandSuggestions = false;
+                                            });
+                                          },
+                                        )
+                                      : null,
+                                ),
+                                onChanged: (text) {
+                                  setState(() {
+                                    _showBrandSuggestions = text
+                                        .trim()
+                                        .isNotEmpty;
+                                  });
+                                  if (text.trim().isNotEmpty) {
+                                    Future.delayed(
+                                      const Duration(milliseconds: 100),
+                                      () {
+                                        if (mounted &&
+                                            _brandFieldKey.currentContext !=
+                                                null) {
+                                          Scrollable.ensureVisible(
+                                            _brandFieldKey.currentContext!,
+                                            alignment: 0.2,
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        }
+                                      },
+                                    );
+                                  }
+                                },
+                                validator: (value) {
+                                  if ((value ?? '').trim().isEmpty) {
+                                    return 'Brand is required';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              if (_showBrandSuggestions &&
+                                  matchingBrands.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  constraints: const BoxConstraints(
+                                    maxHeight: 180,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.cardColor,
+                                    borderRadius: BorderRadius.circular(
+                                      AppSizes.radiusMedium,
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      AppSizes.radiusMedium - 1,
+                                    ),
+                                    child: ListView.separated(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 4,
+                                      ),
+                                      shrinkWrap: true,
+                                      itemCount: matchingBrands.length,
+                                      separatorBuilder: (context, index) =>
+                                          const Divider(height: 1),
+                                      itemBuilder: (context, index) {
+                                        final option = matchingBrands[index];
+                                        return ListTile(
+                                          dense: true,
+                                          visualDensity: VisualDensity.compact,
+                                          leading: CircleAvatar(
+                                            radius: 13,
+                                            backgroundColor: AppColors.primary
+                                                .withValues(alpha: 0.15),
+                                            child: Text(
+                                              option.isNotEmpty
+                                                  ? option[0].toUpperCase()
+                                                  : '?',
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          title: Text(
+                                            option,
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                          onTap: () {
+                                            setState(() {
+                                              _brandController.text = option;
+                                              _showBrandSuggestions = false;
+                                            });
+                                            _brandFocusNode.unfocus();
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: AppSizes.spacingLarge),
+
+                      // Section 3: Pricing & Measurement
                       const _SectionHeader(
                         title: 'Pricing & Measurement',
                         icon: Icons.local_atm_outlined,
                       ),
+                      TextFormField(
+                        controller: _priceController,
+                        textInputAction: TextInputAction.next,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Selling Price *',
+                          hintText: '0.00',
+                          prefixIcon: Icon(Icons.currency_rupee),
+                        ),
+                        validator: (value) {
+                          if ((value ?? '').trim().isEmpty) {
+                            return 'Price is required';
+                          }
+                          final parsed = double.tryParse(value!.trim());
+                          if (parsed == null || parsed < 0) {
+                            return 'Enter a valid price';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSizes.spacingMedium),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: TextFormField(
-                              controller: _priceController,
-                              textInputAction: TextInputAction.next,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                labelText: 'Price *',
-                                hintText: '0.00',
-                                prefixIcon: Icon(Icons.currency_rupee),
-                              ),
-                              validator: (value) {
-                                if ((value ?? '').trim().isEmpty) {
-                                  return 'Required';
-                                }
-                                final parsed = double.tryParse(value!.trim());
-                                if (parsed == null || parsed < 0) {
-                                  return 'Invalid';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: AppSizes.spacingSmall),
-                          Expanded(
-                            flex: 2,
-                            child: DropdownButtonFormField<InventoryUom>(
-                              initialValue: _selectedUom,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'UOM *',
-                                prefixIcon: Icon(Icons.straighten),
-                              ),
-                              items: InventoryUom.values
-                                  .map(
-                                    (uom) => DropdownMenuItem<InventoryUom>(
-                                      value: uom,
-                                      child: Text(
-                                        uom.label,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _selectedUom = value);
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: AppSizes.spacingSmall),
                           Expanded(
                             flex: 2,
                             child: TextFormField(
@@ -325,8 +573,9 @@ class _InventoryItemFormScreenState
                                     decimal: true,
                                   ),
                               decoration: const InputDecoration(
-                                labelText: 'Unit Val *',
+                                labelText: 'Unit Value *',
                                 hintText: 'e.g. 1',
+                                prefixIcon: Icon(Icons.scale_outlined),
                               ),
                               validator: (value) {
                                 if ((value ?? '').trim().isEmpty) {
@@ -337,6 +586,37 @@ class _InventoryItemFormScreenState
                                   return 'Invalid';
                                 }
                                 return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.spacingMedium),
+                          Expanded(
+                            flex: 3,
+                            child: DropdownButtonFormField<InventoryUom>(
+                              initialValue: _selectedUom,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Unit of Measure (UOM) *',
+                                prefixIcon: Icon(Icons.straighten),
+                              ),
+                              items: InventoryUom.values
+                                  .map(
+                                    (uom) => DropdownMenuItem<InventoryUom>(
+                                      value: uom,
+                                      child: Text(
+                                        uom.displayName,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _selectedUom = value);
+                                }
                               },
                             ),
                           ),
@@ -365,9 +645,7 @@ class _InventoryItemFormScreenState
                           decoration: InputDecoration(
                             labelText: 'HSN / Tax Slab',
                             hintText: 'Select HSN code & tax slab',
-                            prefixIcon: const Icon(
-                              Icons.receipt_long_outlined,
-                            ),
+                            prefixIcon: const Icon(Icons.receipt_long_outlined),
                             suffixIcon: _selectedHsnCode != null
                                 ? IconButton(
                                     icon: const Icon(Icons.clear, size: 18),
@@ -410,94 +688,8 @@ class _InventoryItemFormScreenState
                           ),
                         ),
                         value: _isTaxInclusive,
-                        onChanged: (val) => setState(() => _isTaxInclusive = val),
-                      ),
-                      const SizedBox(height: AppSizes.spacingLarge),
-
-                      // Section 3: Categorization
-                      const _SectionHeader(
-                        title: 'Categorization',
-                        icon: Icons.category_outlined,
-                      ),
-                      FormField<String>(
-                        initialValue: _selectedCategory,
-                        validator: (value) {
-                          if ((_selectedCategory ?? '').trim().isEmpty) {
-                            return 'Category is required';
-                          }
-                          return null;
-                        },
-                        builder: (fieldState) {
-                          final hasCategory = _selectedCategory != null &&
-                              _selectedCategory!.trim().isNotEmpty;
-                          return InkWell(
-                            onTap: () async {
-                              final selected = await showCategoryPickerModal(
-                                context,
-                                ref,
-                                selectedCategory: _selectedCategory,
-                              );
-                              if (selected != null) {
-                                setState(() => _selectedCategory = selected);
-                                fieldState.didChange(selected);
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radiusMedium,
-                            ),
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: 'Category *',
-                                hintText: 'Select or search category',
-                                prefixIcon: const Icon(Icons.category_outlined),
-                                suffixIcon: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (hasCategory)
-                                      IconButton(
-                                        icon: const Icon(Icons.clear, size: 18),
-                                        tooltip: 'Clear category',
-                                        onPressed: () {
-                                          setState(() => _selectedCategory = null);
-                                          fieldState.didChange(null);
-                                        },
-                                      ),
-                                    const Icon(Icons.arrow_drop_down),
-                                    const SizedBox(width: 8),
-                                  ],
-                                ),
-                                errorText: fieldState.errorText,
-                              ),
-                              child: Text(
-                                hasCategory
-                                    ? _selectedCategory!
-                                    : 'Select or search category',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: hasCategory
-                                      ? theme.colorScheme.onSurface
-                                      : theme.hintColor,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: AppSizes.spacingMedium),
-
-                      TextFormField(
-                        controller: _brandController,
-                        textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          labelText: 'Brand *',
-                          hintText: 'e.g., Farm Fresh',
-                          prefixIcon: Icon(Icons.business_outlined),
-                        ),
-                        validator: (value) {
-                          if ((value ?? '').trim().isEmpty) {
-                            return 'Brand is required';
-                          }
-                          return null;
-                        },
+                        onChanged: (val) =>
+                            setState(() => _isTaxInclusive = val),
                       ),
                       const SizedBox(height: AppSizes.spacingXLarge),
 
@@ -678,6 +870,11 @@ class _InventoryItemFormScreenState
       return;
     }
 
+    // Auto-register brand in Brand Master if not already present
+    if (draft.brand.isNotEmpty) {
+      ref.read(brandManagerProvider.notifier).quickCreateBrand(draft.brand);
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(widget.isEditing ? 'Item updated' : 'Item saved')),
     );
@@ -825,10 +1022,7 @@ class _ItemProductCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.file(
-                      imageFile,
-                      fit: BoxFit.cover,
-                    ),
+                    Image.file(imageFile, fit: BoxFit.cover),
                     // Gradient overlay
                     Positioned(
                       left: 0,

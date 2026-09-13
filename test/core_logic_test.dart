@@ -17,6 +17,8 @@ import 'package:billing_app_pos/features/inventory/data/inventory_repository.dar
 import 'package:billing_app_pos/features/inventory/domain/inventory_item_model.dart';
 import 'package:billing_app_pos/features/categories/data/category_repository.dart';
 import 'package:billing_app_pos/features/categories/domain/category_model.dart';
+import 'package:billing_app_pos/features/brands/data/brand_repository.dart';
+import 'package:billing_app_pos/features/brands/domain/brand_model.dart';
 import 'package:billing_app_pos/core/services/document_series_service.dart';
 import 'package:billing_app_pos/features/settings/domain/preferences_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -270,7 +272,7 @@ void main() {
       final count = await db.getTotalItemsCount();
       expect(count, 0);
 
-      expect(db.schemaVersion, 11);
+      expect(db.schemaVersion, 12);
     });
 
     test('HSN repository inserts and reads HSN slabs', () async {
@@ -392,6 +394,92 @@ void main() {
       final deleted = await categoryRepo.deleteCategory(created.id);
       expect(deleted, isTrue);
       final afterDelete = await categoryRepo.getCategoryById(created.id);
+      expect(afterDelete, isNull);
+    });
+
+    test('Brand repository seeds defaults, manages CRUD, item counts, and letter filter', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final brandRepo = DriftBrandRepository(db);
+      final seriesService = DocumentSeriesService(db);
+      final inventoryRepo = DriftInventoryRepository(db, seriesService);
+
+      // Default brands seeded
+      final defaults = await brandRepo.getAllBrands();
+      expect(defaults, isNotEmpty);
+      final names = defaults.map((b) => b.name).toSet();
+      expect(names.contains('Amul'), isTrue);
+      expect(names.contains('Nestle'), isTrue);
+      expect(names.contains('Britannia'), isTrue);
+      expect(names.contains('Tata'), isTrue);
+
+      // Insert new brand
+      final created = await brandRepo.insertBrand(
+        const BrandDraft(
+          name: 'Mother Dairy',
+          description: 'Milk, ice cream and dairy products',
+        ),
+      );
+      expect(created.id, greaterThan(0));
+      expect(created.name, 'Mother Dairy');
+
+      // Case-insensitive lookup
+      final fetched = await brandRepo.getBrandByName('mother dairy');
+      expect(fetched, isNotNull);
+      expect(fetched!.name, 'Mother Dairy');
+
+      // Add items under 'Mother Dairy' and verify count
+      await inventoryRepo.insertItem(
+        const InventoryItemDraft(
+          code: 'ITM-9201',
+          name: 'Full Cream Milk 500ml',
+          category: 'Dairy',
+          brand: 'Mother Dairy',
+          price: 33.0,
+        ),
+      );
+      await inventoryRepo.insertItem(
+        const InventoryItemDraft(
+          code: 'ITM-9202',
+          name: 'Classic Curd 400g',
+          category: 'Dairy',
+          brand: 'Mother Dairy',
+          price: 35.0,
+        ),
+      );
+
+      final withCounts = await brandRepo.getAllBrands(withItemCounts: true);
+      final mdBrand = withCounts.firstWhere((b) => b.name == 'Mother Dairy');
+      expect(mdBrand.itemCount, 2);
+
+      // Test letter filtering logic (as used by the auto-suggest Brand field)
+      final allBrands = withCounts.map((b) => b.name).toList();
+      
+      // Filter typing first letter 'a' -> should find 'Amul'
+      final matchesA = allBrands.where((b) => b.toLowerCase().contains('a')).toList();
+      expect(matchesA.contains('Amul'), isTrue);
+
+      // Filter typing uncommon query -> should find nothing (empty dropdown)
+      final matchesNone = allBrands.where((b) => b.toLowerCase().contains('xyz999')).toList();
+      expect(matchesNone, isEmpty);
+
+      // Update brand
+      final updated = await brandRepo.updateBrand(
+        created.id,
+        const BrandDraft(
+          name: 'Mother Dairy Fresh',
+          description: 'Updated description',
+        ),
+      );
+      expect(updated, isTrue);
+
+      final afterUpdate = await brandRepo.getBrandById(created.id);
+      expect(afterUpdate?.name, 'Mother Dairy Fresh');
+
+      // Delete brand
+      final deleted = await brandRepo.deleteBrand(created.id);
+      expect(deleted, isTrue);
+      final afterDelete = await brandRepo.getBrandById(created.id);
       expect(afterDelete, isNull);
     });
   });
