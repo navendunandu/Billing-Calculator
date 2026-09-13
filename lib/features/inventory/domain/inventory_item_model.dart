@@ -21,6 +21,25 @@ extension InventoryUomLabel on InventoryUom {
         return 'box';
     }
   }
+
+  String get displayName {
+    switch (this) {
+      case InventoryUom.pcs:
+        return 'Pieces (pcs)';
+      case InventoryUom.kg:
+        return 'Kilograms (kg)';
+      case InventoryUom.g:
+        return 'Grams (g)';
+      case InventoryUom.l:
+        return 'Liters (l)';
+      case InventoryUom.ml:
+        return 'Milliliters (ml)';
+      case InventoryUom.pack:
+        return 'Pack (pack)';
+      case InventoryUom.box:
+        return 'Box (box)';
+    }
+  }
 }
 
 /// App-level inventory entity used by UI and state management.

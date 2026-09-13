@@ -97,6 +97,22 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             _DrawerItem(
+              icon: Icons.category_outlined,
+              title: 'Category Master',
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/categories');
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.business_outlined,
+              title: 'Brand Master',
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/brands');
+              },
+            ),
+            _DrawerItem(
               icon: Icons.settings,
               title: 'Settings',
               onTap: () {

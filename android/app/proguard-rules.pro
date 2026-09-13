@@ -23,3 +23,7 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# Play Store splitinstall / deferred components (not used by app)
+-dontwarn com.google.android.play.core.**
+
