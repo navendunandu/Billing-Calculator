@@ -15,6 +15,8 @@ import 'package:billing_app_pos/features/hsn/data/hsn_repository.dart';
 import 'package:billing_app_pos/features/hsn/domain/hsn_entry_model.dart';
 import 'package:billing_app_pos/features/inventory/data/inventory_repository.dart';
 import 'package:billing_app_pos/features/inventory/domain/inventory_item_model.dart';
+import 'package:billing_app_pos/features/categories/data/category_repository.dart';
+import 'package:billing_app_pos/features/categories/domain/category_model.dart';
 import 'package:billing_app_pos/core/services/document_series_service.dart';
 import 'package:billing_app_pos/features/settings/domain/preferences_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -268,7 +270,7 @@ void main() {
       final count = await db.getTotalItemsCount();
       expect(count, 0);
 
-      expect(db.schemaVersion, 10);
+      expect(db.schemaVersion, 11);
     });
 
     test('HSN repository inserts and reads HSN slabs', () async {
@@ -317,6 +319,80 @@ void main() {
       expect(item.taxRate, 5.0);
       expect(item.isTaxInclusive, isTrue);
       expect(item.taxLabel, '5% GST');
+    });
+
+    test('Category repository seeds defaults, manages CRUD and item counts', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final categoryRepo = DriftCategoryRepository(db);
+      final seriesService = DocumentSeriesService(db);
+      final inventoryRepo = DriftInventoryRepository(db, seriesService);
+
+      // Default categories seeded
+      final defaults = await categoryRepo.getAllCategories();
+      expect(defaults, isNotEmpty);
+      final names = defaults.map((c) => c.name).toSet();
+      expect(names.contains('Fruits'), isTrue);
+      expect(names.contains('Dairy'), isTrue);
+      expect(names.contains('Bakery'), isTrue);
+
+      // Insert new category
+      final created = await categoryRepo.insertCategory(
+        const CategoryDraft(
+          name: 'Frozen Foods',
+          description: 'Ice cream and frozen vegetables',
+        ),
+      );
+      expect(created.id, greaterThan(0));
+      expect(created.name, 'Frozen Foods');
+
+      // Case-insensitive lookup
+      final fetched = await categoryRepo.getCategoryByName('frozen foods');
+      expect(fetched, isNotNull);
+      expect(fetched!.name, 'Frozen Foods');
+
+      // Add items under 'Frozen Foods' and verify count
+      await inventoryRepo.insertItem(
+        const InventoryItemDraft(
+          code: 'ITM-9101',
+          name: 'Vanilla Ice Cream',
+          category: 'Frozen Foods',
+          brand: 'Creamy',
+          price: 80.0,
+        ),
+      );
+      await inventoryRepo.insertItem(
+        const InventoryItemDraft(
+          code: 'ITM-9102',
+          name: 'Frozen Green Peas',
+          category: 'Frozen Foods',
+          brand: 'Farm Green',
+          price: 45.0,
+        ),
+      );
+
+      final withCounts = await categoryRepo.getAllCategories(withItemCounts: true);
+      final frozenCategory = withCounts.firstWhere((c) => c.name == 'Frozen Foods');
+      expect(frozenCategory.itemCount, 2);
+
+      // Update category
+      final updated = await categoryRepo.updateCategory(
+        created.id,
+        const CategoryDraft(
+          name: 'Frozen & Chilled Foods',
+          description: 'Updated description',
+        ),
+      );
+      expect(updated, isTrue);
+
+      final afterUpdate = await categoryRepo.getCategoryById(created.id);
+      expect(afterUpdate?.name, 'Frozen & Chilled Foods');
+
+      // Delete category
+      final deleted = await categoryRepo.deleteCategory(created.id);
+      expect(deleted, isTrue);
+      final afterDelete = await categoryRepo.getCategoryById(created.id);
+      expect(afterDelete, isNull);
     });
   });
 

@@ -15,6 +15,7 @@ import 'tables/ledger_entries.dart';
 import 'tables/inventory_items.dart';
 import 'tables/document_series_numbers.dart';
 import 'tables/hsn_entries.dart';
+import 'tables/categories.dart';
 
 part 'app_database.g.dart';
 
@@ -30,6 +31,7 @@ part 'app_database.g.dart';
     Vouchers,
     LedgerEntries,
     HsnEntries,
+    Categories,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -39,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration {
@@ -48,6 +50,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
         await ensureDefaultItemSeries();
         await ensureDefaultHsnEntries();
+        await ensureDefaultCategories();
       },
       onUpgrade: (Migrator m, int from, int to) async {
         // Run migrations cumulatively so users can jump multiple schema
@@ -166,6 +169,13 @@ class AppDatabase extends _$AppDatabase {
           if (!await _columnExists('invoice_items', 'is_tax_inclusive')) {
             await m.addColumn(invoiceItems, invoiceItems.isTaxInclusive);
           }
+        }
+
+        if (from < 11) {
+          if (!await _tableExists('categories')) {
+            await m.createTable(categories);
+          }
+          await ensureDefaultCategories();
         }
       },
     );
@@ -629,6 +639,110 @@ class AppDatabase extends _$AppDatabase {
       }
     } catch (e) {
       debugPrint('ensureDefaultHsnEntries failed: $e');
+    }
+  }
+
+  // ============ Category Operations ============
+
+  /// Stream of all categories ordered by name ascending
+  Stream<List<Category>> watchAllCategories() {
+    return (select(categories)..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
+  }
+
+  /// Get all categories ordered by name ascending
+  Future<List<Category>> getAllCategories() {
+    return (select(categories)..orderBy([(t) => OrderingTerm.asc(t.name)])).get();
+  }
+
+  /// Get single category by ID
+  Future<Category?> getCategoryById(int id) {
+    return (select(categories)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  /// Get single category by name (case-insensitive)
+  Future<Category?> getCategoryByName(String name) {
+    final trimmed = name.trim().toLowerCase();
+    return (select(categories)..where((t) => t.name.lower().equals(trimmed))).getSingleOrNull();
+  }
+
+  /// Insert a new category
+  Future<int> insertCategory(CategoriesCompanion entry) {
+    return into(categories).insert(entry);
+  }
+
+  /// Update an existing category
+  Future<bool> updateCategory(CategoriesCompanion entry) {
+    return update(categories).replace(entry);
+  }
+
+  /// Delete a category by ID
+  Future<int> deleteCategory(int id) {
+    return (delete(categories)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Get item counts per category for active inventory items
+  Future<Map<String, int>> getCategoryItemCounts() async {
+    final result = <String, int>{};
+    try {
+      if (await _tableExists('inventory_items')) {
+        final rows = await customSelect(
+          'SELECT category, COUNT(*) as cnt FROM inventory_items WHERE status != ? GROUP BY category',
+          variables: [Variable.withInt(InventoryItemStatus.archived.index)],
+        ).get();
+        for (final row in rows) {
+          final cat = row.read<String?>('category');
+          if (cat != null && cat.isNotEmpty) {
+            result[cat] = row.read<int>('cnt');
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('getCategoryItemCounts failed: $e');
+    }
+    return result;
+  }
+
+  /// Ensure default product categories are populated
+  Future<void> ensureDefaultCategories() async {
+    try {
+      final defaultCategories = [
+        ('Fruits', 'Fresh seasonal & imported fruits'),
+        ('Vegetables', 'Fresh farm vegetables & greens'),
+        ('Dairy', 'Milk, cheese, butter, yogurt & curd'),
+        ('Bakery', 'Bread, cakes, cookies & pastries'),
+        ('Beverages', 'Juices, soda, tea, coffee & soft drinks'),
+        ('Snacks', 'Chips, namkeen, biscuits & packaged snacks'),
+        ('Poultry', 'Eggs, poultry, meat & fresh protein'),
+        ('Electronics', 'Cables, chargers, batteries & gadgets'),
+        ('Home', 'Cleaning, personal care & household essentials'),
+      ];
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      for (final cat in defaultCategories) {
+        await customStatement(
+          'INSERT OR IGNORE INTO categories (name, description, created_at, updated_at) '
+          'VALUES (?, ?, ?, ?)',
+          [cat.$1, cat.$2, now, now],
+        );
+      }
+
+      // Also backfill any categories from inventory_items that might not be in defaults
+      if (await _tableExists('inventory_items')) {
+        final existingRows = await customSelect(
+          "SELECT DISTINCT category FROM inventory_items WHERE category IS NOT NULL AND TRIM(category) != ''",
+        ).get();
+        for (final row in existingRows) {
+          final catName = row.read<String>('category').trim();
+          if (catName.isNotEmpty) {
+            await customStatement(
+              'INSERT OR IGNORE INTO categories (name, created_at, updated_at) VALUES (?, ?, ?)',
+              [catName, now, now],
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('ensureDefaultCategories failed: $e');
     }
   }
 }

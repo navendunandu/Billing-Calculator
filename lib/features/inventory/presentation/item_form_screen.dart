@@ -14,6 +14,7 @@ import '../../../core/widgets/common_app_bar.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../domain/inventory_item_model.dart';
 import '../../hsn/presentation/manage_hsn_screen.dart';
+import '../../categories/presentation/widgets/category_picker_modal.dart';
 import 'providers/inventory_providers.dart';
 
 class InventoryItemFormScreen extends ConsumerStatefulWidget {
@@ -47,18 +48,6 @@ class _InventoryItemFormScreenState
   bool _isTaxInclusive = true;
   bool _isInitializing = false;
   String? _codeLoadError;
-
-  static const List<String> _defaultCategories = [
-    'Fruits',
-    'Vegetables',
-    'Dairy',
-    'Bakery',
-    'Beverages',
-    'Snacks',
-    'Poultry',
-    'Electronics',
-    'Home',
-  ];
 
   @override
   void initState() {
@@ -151,10 +140,6 @@ class _InventoryItemFormScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(inventoryManagerProvider);
     final theme = Theme.of(context);
-    final allCategoryOptions = <String>{
-      ..._defaultCategories,
-      ...state.allCategories,
-    }.toList()..sort();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -434,30 +419,67 @@ class _InventoryItemFormScreenState
                         title: 'Categorization',
                         icon: Icons.category_outlined,
                       ),
-                      DropdownButtonFormField<String>(
+                      FormField<String>(
                         initialValue: _selectedCategory,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Category *',
-                          hintText: 'Select category',
-                          prefixIcon: Icon(Icons.category_outlined),
-                        ),
-                        items: allCategoryOptions
-                            .map(
-                              (category) => DropdownMenuItem<String>(
-                                value: category,
-                                child: Text(category),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() => _selectedCategory = value);
-                        },
                         validator: (value) {
-                          if ((value ?? '').trim().isEmpty) {
+                          if ((_selectedCategory ?? '').trim().isEmpty) {
                             return 'Category is required';
                           }
                           return null;
+                        },
+                        builder: (fieldState) {
+                          final hasCategory = _selectedCategory != null &&
+                              _selectedCategory!.trim().isNotEmpty;
+                          return InkWell(
+                            onTap: () async {
+                              final selected = await showCategoryPickerModal(
+                                context,
+                                ref,
+                                selectedCategory: _selectedCategory,
+                              );
+                              if (selected != null) {
+                                setState(() => _selectedCategory = selected);
+                                fieldState.didChange(selected);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusMedium,
+                            ),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: 'Category *',
+                                hintText: 'Select or search category',
+                                prefixIcon: const Icon(Icons.category_outlined),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (hasCategory)
+                                      IconButton(
+                                        icon: const Icon(Icons.clear, size: 18),
+                                        tooltip: 'Clear category',
+                                        onPressed: () {
+                                          setState(() => _selectedCategory = null);
+                                          fieldState.didChange(null);
+                                        },
+                                      ),
+                                    const Icon(Icons.arrow_drop_down),
+                                    const SizedBox(width: 8),
+                                  ],
+                                ),
+                                errorText: fieldState.errorText,
+                              ),
+                              child: Text(
+                                hasCategory
+                                    ? _selectedCategory!
+                                    : 'Select or search category',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: hasCategory
+                                      ? theme.colorScheme.onSurface
+                                      : theme.hintColor,
+                                ),
+                              ),
+                            ),
+                          );
                         },
                       ),
                       const SizedBox(height: AppSizes.spacingMedium),
