@@ -89,6 +89,14 @@ class AppDrawer extends ConsumerWidget {
                 },
               ),
             _DrawerItem(
+              icon: Icons.receipt_long_outlined,
+              title: 'HSN & Tax Master',
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/hsn');
+              },
+            ),
+            _DrawerItem(
               icon: Icons.settings,
               title: 'Settings',
               onTap: () {

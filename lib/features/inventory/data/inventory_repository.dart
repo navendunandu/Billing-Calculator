@@ -80,6 +80,13 @@ class DriftInventoryRepository implements InventoryRepository {
                 : draft.imagePath?.trim(),
           ),
           status: Value(_mapStatusToDb(draft.status)),
+          hsnCode: Value(
+            draft.hsnCode?.trim().isEmpty == true
+                ? null
+                : draft.hsnCode?.trim(),
+          ),
+          taxRate: Value(draft.taxRate),
+          isTaxInclusive: Value(draft.isTaxInclusive),
         ),
       );
 
@@ -120,6 +127,13 @@ class DriftInventoryRepository implements InventoryRepository {
             : draft.imagePath?.trim(),
       ),
       status: _mapStatusToDb(draft.status),
+      hsnCode: Value(
+        draft.hsnCode?.trim().isEmpty == true
+            ? null
+            : draft.hsnCode?.trim(),
+      ),
+      taxRate: draft.taxRate,
+      isTaxInclusive: draft.isTaxInclusive,
     );
 
     final didUpdate = await _db.updateInventoryItem(updated);
@@ -147,6 +161,9 @@ class DriftInventoryRepository implements InventoryRepository {
       imagePath: row.imagePath,
       status: _mapStatusFromDb(row.status),
       createdAt: row.createdAt,
+      hsnCode: row.hsnCode,
+      taxRate: row.taxRate,
+      isTaxInclusive: row.isTaxInclusive,
     );
   }
 

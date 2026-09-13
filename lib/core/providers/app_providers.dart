@@ -100,6 +100,24 @@ class UserPreferencesNotifier extends Notifier<UserPreferences> {
     await state.saveToPrefs(_prefs);
   }
 
+  /// Toggle GST billing
+  Future<void> setGstBillingEnabled(bool enabled) async {
+    state = state.copyWith(gstBillingEnabled: enabled);
+    await state.saveToPrefs(_prefs);
+  }
+
+  /// Update Store GSTIN
+  Future<void> setStoreGstin(String gstin) async {
+    state = state.copyWith(storeGstin: gstin.trim().toUpperCase());
+    await state.saveToPrefs(_prefs);
+  }
+
+  /// Update Store Name
+  Future<void> setStoreName(String storeName) async {
+    state = state.copyWith(storeName: storeName.trim());
+    await state.saveToPrefs(_prefs);
+  }
+
   /// Reset to defaults
   Future<void> resetToDefaults() async {
     state = const UserPreferences();

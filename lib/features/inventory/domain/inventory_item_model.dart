@@ -38,6 +38,9 @@ class InventoryItemModel {
     required this.status,
     required this.createdAt,
     this.imagePath,
+    this.hsnCode,
+    this.taxRate = 0.0,
+    this.isTaxInclusive = true,
   });
 
   final int id;
@@ -52,6 +55,12 @@ class InventoryItemModel {
   final String? imagePath;
   final InventoryStatus status;
   final DateTime createdAt;
+  final String? hsnCode;
+  final double taxRate;
+  final bool isTaxInclusive;
+
+  /// Effective tax percentage string (e.g. "5% GST")
+  String get taxLabel => '${taxRate.toStringAsFixed(taxRate % 1 == 0 ? 0 : 1)}% GST';
 
   InventoryItemModel copyWith({
     int? id,
@@ -66,6 +75,9 @@ class InventoryItemModel {
     String? imagePath,
     InventoryStatus? status,
     DateTime? createdAt,
+    String? hsnCode,
+    double? taxRate,
+    bool? isTaxInclusive,
   }) {
     return InventoryItemModel(
       id: id ?? this.id,
@@ -80,6 +92,9 @@ class InventoryItemModel {
       imagePath: imagePath ?? this.imagePath,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
+      hsnCode: hsnCode ?? this.hsnCode,
+      taxRate: taxRate ?? this.taxRate,
+      isTaxInclusive: isTaxInclusive ?? this.isTaxInclusive,
     );
   }
 }
@@ -97,6 +112,9 @@ class InventoryItemDraft {
     this.unitValue = 1.0,
     this.imagePath,
     this.status = InventoryStatus.available,
+    this.hsnCode,
+    this.taxRate = 0.0,
+    this.isTaxInclusive = true,
   });
 
   final String code;
@@ -109,4 +127,7 @@ class InventoryItemDraft {
   final double unitValue;
   final String? imagePath;
   final InventoryStatus status;
+  final String? hsnCode;
+  final double taxRate;
+  final bool isTaxInclusive;
 }

@@ -341,12 +341,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     label: 'Subtotal',
                     value: CurrencyFormatter.format(subtotal),
                   ),
-                  const SizedBox(height: AppSizes.spacingSmall),
-                  CheckoutSummaryRow(
-                    label: 'Discount',
-                    value: '- ${CurrencyFormatter.format(discountValue)}',
-                    valueColor: AppColors.error,
-                  ),
+                  if (calcState.hasTax) ...[
+                    const SizedBox(height: AppSizes.spacingSmall),
+                    CheckoutSummaryRow(
+                      label: 'Taxable Amount',
+                      value: CurrencyFormatter.format(calcState.totalTaxableAmount),
+                    ),
+                    const SizedBox(height: AppSizes.spacingSmall),
+                    CheckoutSummaryRow(
+                      label: 'CGST',
+                      value: CurrencyFormatter.format(calcState.totalCgstAmount),
+                    ),
+                    const SizedBox(height: AppSizes.spacingSmall),
+                    CheckoutSummaryRow(
+                      label: 'SGST',
+                      value: CurrencyFormatter.format(calcState.totalSgstAmount),
+                    ),
+                  ],
+                  if (discountValue > 0) ...[
+                    const SizedBox(height: AppSizes.spacingSmall),
+                    CheckoutSummaryRow(
+                      label: 'Discount',
+                      value: '- ${CurrencyFormatter.format(discountValue)}',
+                      valueColor: AppColors.error,
+                    ),
+                  ],
                   const Divider(height: AppSizes.spacingLarge),
                   CheckoutSummaryRow(
                     label: 'Grand Total',
@@ -454,12 +473,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final repository = ref.read(invoiceRepositoryProvider);
       final paymentState = _resolvePaymentState(grandTotal);
 
+      final calcState = ref.read(calculatorProvider);
       final result = await repository.saveInvoice(
         SaveInvoiceRequest(
           items: items,
           subtotal: subtotal,
           discount: discount,
           grandTotal: grandTotal,
+          taxableAmount: calcState.totalTaxableAmount,
+          totalTaxAmount: calcState.totalTaxAmount,
+          cgstAmount: calcState.totalCgstAmount,
+          sgstAmount: calcState.totalSgstAmount,
           paymentMode: _selectedPaymentMode,
           paidAmount: paymentState.paidAmount,
           paymentStatus: paymentState.paymentStatus,

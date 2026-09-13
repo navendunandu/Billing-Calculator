@@ -12,6 +12,7 @@ import '../../features/inventory/presentation/item_form_screen.dart';
 import '../../features/customers/presentation/manage_customers_screen.dart';
 import '../../features/customers/presentation/customer_detail_screen.dart';
 import '../../features/customers/presentation/customer_form_screen.dart';
+import '../../features/hsn/presentation/manage_hsn_screen.dart';
 
 /// App router configuration using go_router
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -58,6 +59,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+
+    // HSN & Tax Master Screen
+    GoRoute(
+      path: '/hsn',
+      builder: (context, state) => const ManageHsnScreen(),
     ),
 
     // Inventory Management Screen

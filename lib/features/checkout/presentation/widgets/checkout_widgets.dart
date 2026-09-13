@@ -36,7 +36,7 @@ class CheckoutSectionCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            if (trailing != null) trailing!,
+            ?trailing,
           ],
         ),
         const SizedBox(height: AppSizes.spacingMedium),
@@ -119,9 +119,34 @@ class CheckoutItemTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(item.name, style: theme.textTheme.titleSmall),
-                Text(
-                  '${CurrencyFormatter.formatQuantity(item.quantity)} × ${CurrencyFormatter.format(item.rate)}',
-                  style: theme.textTheme.bodySmall,
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  children: [
+                    Text(
+                      '${CurrencyFormatter.formatQuantity(item.quantity)} × ${CurrencyFormatter.format(item.rate)}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    if (item.hasTax)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}% GST${item.isTaxInclusive ? '' : ' (+tax)'}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),

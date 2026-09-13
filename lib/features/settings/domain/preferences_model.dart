@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Supported languages in the app
@@ -46,6 +45,9 @@ class UserPreferences {
     this.creditPaymentEnabled = true,
     this.upiPaymentEnabled = true,
     this.upiId = '',
+    this.gstBillingEnabled = true,
+    this.storeGstin = '',
+    this.storeName = '',
   });
 
   final AppThemeMode themeMode;
@@ -56,6 +58,9 @@ class UserPreferences {
   final bool creditPaymentEnabled;
   final bool upiPaymentEnabled;
   final String upiId;
+  final bool gstBillingEnabled;
+  final String storeGstin;
+  final String storeName;
 
   /// Create preferences from SharedPreferences
   factory UserPreferences.fromPrefs(SharedPreferences prefs) {
@@ -77,6 +82,9 @@ class UserPreferences {
         creditPaymentEnabled: prefs.getBool('creditPaymentEnabled') ?? true,
         upiPaymentEnabled: prefs.getBool('upiPaymentEnabled') ?? true,
         upiId: (prefs.getString('upiId') ?? '').trim(),
+        gstBillingEnabled: prefs.getBool('gstBillingEnabled') ?? true,
+        storeGstin: (prefs.getString('storeGstin') ?? '').trim(),
+        storeName: (prefs.getString('storeName') ?? '').trim(),
       );
     } catch (e) {
       // If anything goes wrong, return defaults
@@ -95,6 +103,9 @@ class UserPreferences {
     await prefs.setBool('creditPaymentEnabled', creditPaymentEnabled);
     await prefs.setBool('upiPaymentEnabled', upiPaymentEnabled);
     await prefs.setString('upiId', upiId);
+    await prefs.setBool('gstBillingEnabled', gstBillingEnabled);
+    await prefs.setString('storeGstin', storeGstin);
+    await prefs.setString('storeName', storeName);
   }
 
   /// Copy with modified values
@@ -107,6 +118,9 @@ class UserPreferences {
     bool? creditPaymentEnabled,
     bool? upiPaymentEnabled,
     String? upiId,
+    bool? gstBillingEnabled,
+    String? storeGstin,
+    String? storeName,
   }) {
     return UserPreferences(
       themeMode: themeMode ?? this.themeMode,
@@ -117,6 +131,9 @@ class UserPreferences {
       creditPaymentEnabled: creditPaymentEnabled ?? this.creditPaymentEnabled,
       upiPaymentEnabled: upiPaymentEnabled ?? this.upiPaymentEnabled,
       upiId: upiId ?? this.upiId,
+      gstBillingEnabled: gstBillingEnabled ?? this.gstBillingEnabled,
+      storeGstin: storeGstin ?? this.storeGstin,
+      storeName: storeName ?? this.storeName,
     );
   }
 
@@ -134,7 +151,10 @@ class UserPreferences {
         other.hapticFeedback == hapticFeedback &&
         other.creditPaymentEnabled == creditPaymentEnabled &&
         other.upiPaymentEnabled == upiPaymentEnabled &&
-        other.upiId == upiId;
+        other.upiId == upiId &&
+        other.gstBillingEnabled == gstBillingEnabled &&
+        other.storeGstin == storeGstin &&
+        other.storeName == storeName;
   }
 
   @override
@@ -148,6 +168,9 @@ class UserPreferences {
       creditPaymentEnabled,
       upiPaymentEnabled,
       upiId,
+      gstBillingEnabled,
+      storeGstin,
+      storeName,
     );
   }
 }

@@ -141,11 +141,36 @@ class _BillItemTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSizes.spacingXSmall),
-                  Text(
-                    '${CurrencyFormatter.formatQuantity(item.quantity)} × ${CurrencyFormatter.format(item.rate)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.bodySmall?.color,
-                    ),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    children: [
+                      Text(
+                        '${CurrencyFormatter.formatQuantity(item.quantity)} × ${CurrencyFormatter.format(item.rate)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                      if (item.hasTax)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}% GST${item.isTaxInclusive ? '' : ' (+tax)'}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -206,7 +231,9 @@ class BillSummaryCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${calcState.itemCount} items',
+                      calcState.hasTax
+                          ? '${calcState.itemCount} items • GST: ${CurrencyFormatter.format(calcState.totalTaxAmount)}'
+                          : '${calcState.itemCount} items',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.textTheme.bodySmall?.color,
                       ),

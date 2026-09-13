@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
@@ -146,6 +147,60 @@ class SettingsScreen extends ConsumerWidget {
                   activeThumbColor: AppColors.primary,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spacingLarge),
+
+          // Tax & GST Section
+          _SettingsSection(
+            title: 'Tax & GST',
+            children: [
+              _SettingsTile(
+                icon: Icons.receipt_long,
+                title: 'Enable GST Billing',
+                subtitle: 'Compute GST breakdown and taxes on bills & invoices',
+                trailing: Switch(
+                  value: prefs.gstBillingEnabled,
+                  onChanged: (value) =>
+                      prefsNotifier.setGstBillingEnabled(value),
+                  activeThumbColor: AppColors.primary,
+                ),
+              ),
+              if (prefs.gstBillingEnabled) ...[
+                _SettingsTile(
+                  icon: Icons.badge_outlined,
+                  title: 'Store GSTIN',
+                  subtitle: prefs.storeGstin.isEmpty
+                      ? 'Tap to enter GSTIN (e.g. 27AAAAA0000A1Z5)'
+                      : prefs.storeGstin,
+                  trailing: const Icon(Icons.edit_outlined),
+                  onTap: () => _openGstinModalAndSave(
+                    context,
+                    currentGstin: prefs.storeGstin,
+                    notifier: prefsNotifier,
+                  ),
+                ),
+                _SettingsTile(
+                  icon: Icons.storefront_outlined,
+                  title: 'Store Name',
+                  subtitle: prefs.storeName.isEmpty
+                      ? 'Tap to enter store / business name'
+                      : prefs.storeName,
+                  trailing: const Icon(Icons.edit_outlined),
+                  onTap: () => _openStoreNameModalAndSave(
+                    context,
+                    currentStoreName: prefs.storeName,
+                    notifier: prefsNotifier,
+                  ),
+                ),
+                _SettingsTile(
+                  icon: Icons.table_chart_outlined,
+                  title: 'HSN & Tax Slabs',
+                  subtitle: 'Manage HSN codes and GST rates catalog',
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => context.push('/hsn'),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: AppSizes.spacingLarge),
@@ -382,6 +437,119 @@ class SettingsScreen extends ConsumerWidget {
 
   bool _isValidUpiId(String value) {
     return value.contains('@') && value.length >= 5;
+  }
+
+  Future<void> _openGstinModalAndSave(
+    BuildContext context, {
+    required String currentGstin,
+    required UserPreferencesNotifier notifier,
+  }) async {
+    final controller = TextEditingController(text: currentGstin);
+    String? errorText;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(
+            currentGstin.isEmpty ? 'Enter Store GSTIN' : 'Edit Store GSTIN',
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  labelText: 'GSTIN (15 characters)',
+                  hintText: 'e.g. 27AAAAA0000A1Z5',
+                  prefixIcon: const Icon(Icons.badge_outlined),
+                  errorText: errorText,
+                ),
+                onSubmitted: (_) {
+                  final text = controller.text.trim().toUpperCase();
+                  if (text.isNotEmpty && text.length != 15) {
+                    setDialogState(() {
+                      errorText = 'GSTIN should be 15 alphanumeric characters';
+                    });
+                    return;
+                  }
+                  Navigator.of(dialogContext).pop(text);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = controller.text.trim().toUpperCase();
+                if (text.isNotEmpty && text.length != 15) {
+                  setDialogState(() {
+                    errorText = 'GSTIN should be 15 alphanumeric characters';
+                  });
+                  return;
+                }
+                Navigator.of(dialogContext).pop(text);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null) {
+      await notifier.setStoreGstin(result);
+    }
+  }
+
+  Future<void> _openStoreNameModalAndSave(
+    BuildContext context, {
+    required String currentStoreName,
+    required UserPreferencesNotifier notifier,
+  }) async {
+    final controller = TextEditingController(text: currentStoreName);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          currentStoreName.isEmpty ? 'Enter Store Name' : 'Edit Store Name',
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Business / Store Name',
+            hintText: 'e.g. Super Mart',
+            prefixIcon: Icon(Icons.storefront_outlined),
+          ),
+          onSubmitted: (value) =>
+              Navigator.of(dialogContext).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      await notifier.setStoreName(result);
+    }
   }
 }
 

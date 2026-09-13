@@ -24,6 +24,28 @@ class InvoiceItems extends Table {
   /// Item-level discount (optional)
   RealColumn get discountAmount => real().withDefault(const Constant(0.0))();
 
+  /// HSN / SAC Code
+  TextColumn get hsnCode => text().nullable()();
+
+  /// GST Tax Rate percentage (0, 5, 12, 18, 28)
+  RealColumn get taxRate => real().withDefault(const Constant(0.0))();
+
+  /// Taxable value (base amount)
+  RealColumn get taxableAmount => real().withDefault(const Constant(0.0))();
+
+  /// Total tax amount
+  RealColumn get taxAmount => real().withDefault(const Constant(0.0))();
+
+  /// CGST amount
+  RealColumn get cgstAmount => real().withDefault(const Constant(0.0))();
+
+  /// SGST amount
+  RealColumn get sgstAmount => real().withDefault(const Constant(0.0))();
+
+  /// Whether the item rate is tax-inclusive (MRP)
+  BoolColumn get isTaxInclusive =>
+      boolean().withDefault(const Constant(true))();
+
   /// Serial number for ordering within invoice
   IntColumn get serialNo => integer().withDefault(const Constant(1))();
 

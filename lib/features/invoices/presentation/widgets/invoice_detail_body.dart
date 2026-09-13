@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/providers/app_providers.dart';
 import '../../../../core/utils/currency_format.dart';
 import '../../../../core/utils/date_helpers.dart';
 import '../../../../core/database/tables/invoices.dart';
 import '../../domain/invoice_model.dart';
 
-class InvoiceDetailBody extends StatelessWidget {
+class InvoiceDetailBody extends ConsumerWidget {
   const InvoiceDetailBody({super.key, required this.detail});
 
   final InvoiceDetailModel detail;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final prefs = ref.watch(userPreferencesProvider);
     final invoice = detail.invoice;
     final items = detail.items;
 
@@ -36,6 +39,37 @@ class InvoiceDetailBody extends StatelessWidget {
                   color: AppColors.primary,
                 ),
                 const SizedBox(height: AppSizes.spacingMedium),
+                if (prefs.storeName.isNotEmpty) ...[
+                  Text(
+                    prefs.storeName,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.spacingXSmall),
+                ],
+                if (prefs.storeGstin.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'GSTIN: ${prefs.storeGstin}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.spacingSmall),
+                ],
                 Text(
                   invoice.invoiceNo,
                   style: theme.textTheme.headlineMedium?.copyWith(
@@ -137,9 +171,25 @@ class InvoiceDetailBody extends StatelessWidget {
                         ),
                         Expanded(
                           flex: 3,
-                          child: Text(
-                            items[i].itemName,
-                            style: theme.textTheme.bodyMedium,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                items[i].itemName,
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                              if (items[i].hasTax) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${items[i].hsnCode != null ? "HSN ${items[i].hsnCode} • " : ""}${items[i].taxRate.toStringAsFixed(items[i].taxRate % 1 == 0 ? 0 : 1)}% GST',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: AppColors.primary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         Expanded(
@@ -165,6 +215,142 @@ class InvoiceDetailBody extends StatelessWidget {
               ],
             ),
           ),
+          if (detail.hasTax && detail.hsnSummary.isNotEmpty) ...[
+            const SizedBox(height: AppSizes.spacingXLarge),
+            Text(
+              'Tax Breakdown (HSN)',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSizes.spacingMedium),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+                border: Border.all(color: theme.dividerColor),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.paddingMedium,
+                      vertical: AppSizes.paddingSmall,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppSizes.radiusLarge),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text('HSN', style: theme.textTheme.labelMedium),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Rate',
+                            style: theme.textTheme.labelMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Taxable',
+                            style: theme.textTheme.labelMedium,
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            'CGST',
+                            style: theme.textTheme.labelMedium,
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            'SGST',
+                            style: theme.textTheme.labelMedium,
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  for (int j = 0; j < detail.hsnSummary.length; j++)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.paddingMedium,
+                        vertical: AppSizes.paddingSmall,
+                      ),
+                      decoration: BoxDecoration(
+                        border: j < detail.hsnSummary.length - 1
+                            ? Border(
+                                bottom: BorderSide(color: theme.dividerColor),
+                              )
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              detail.hsnSummary[j].hsnCode,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${detail.hsnSummary[j].taxRate.toStringAsFixed(detail.hsnSummary[j].taxRate % 1 == 0 ? 0 : 1)}%',
+                              style: theme.textTheme.bodySmall,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              CurrencyFormatter.formatWithoutSymbol(
+                                detail.hsnSummary[j].taxableAmount,
+                              ),
+                              style: theme.textTheme.bodySmall,
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              CurrencyFormatter.formatWithoutSymbol(
+                                detail.hsnSummary[j].cgstAmount,
+                              ),
+                              style: theme.textTheme.bodySmall,
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              CurrencyFormatter.formatWithoutSymbol(
+                                detail.hsnSummary[j].sgstAmount,
+                              ),
+                              style: theme.textTheme.bodySmall,
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: AppSizes.spacingXLarge),
           Container(
             padding: const EdgeInsets.all(AppSizes.paddingLarge),
@@ -179,6 +365,23 @@ class InvoiceDetailBody extends StatelessWidget {
                   label: 'Subtotal',
                   value: CurrencyFormatter.format(invoice.subtotalAmount),
                 ),
+                if (detail.hasTax) ...[
+                  const SizedBox(height: AppSizes.spacingSmall),
+                  InvoiceSummaryRow(
+                    label: 'Taxable Value',
+                    value: CurrencyFormatter.format(invoice.taxableAmount),
+                  ),
+                  const SizedBox(height: AppSizes.spacingSmall),
+                  InvoiceSummaryRow(
+                    label: 'CGST',
+                    value: CurrencyFormatter.format(invoice.cgstAmount),
+                  ),
+                  const SizedBox(height: AppSizes.spacingSmall),
+                  InvoiceSummaryRow(
+                    label: 'SGST',
+                    value: CurrencyFormatter.format(invoice.sgstAmount),
+                  ),
+                ],
                 if (invoice.discountAmount > 0) ...[
                   const SizedBox(height: AppSizes.spacingSmall),
                   InvoiceSummaryRow(

@@ -14,6 +14,7 @@ import 'tables/vouchers.dart';
 import 'tables/ledger_entries.dart';
 import 'tables/inventory_items.dart';
 import 'tables/document_series_numbers.dart';
+import 'tables/hsn_entries.dart';
 
 part 'app_database.g.dart';
 
@@ -28,6 +29,7 @@ part 'app_database.g.dart';
     Ledgers,
     Vouchers,
     LedgerEntries,
+    HsnEntries,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -37,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration {
@@ -45,6 +47,7 @@ class AppDatabase extends _$AppDatabase {
       onCreate: (Migrator m) async {
         await m.createAll();
         await ensureDefaultItemSeries();
+        await ensureDefaultHsnEntries();
       },
       onUpgrade: (Migrator m, int from, int to) async {
         // Run migrations cumulatively so users can jump multiple schema
@@ -110,6 +113,59 @@ class AppDatabase extends _$AppDatabase {
 
         if (from < 8) {
           await _normalizeInvoicePaymentData();
+        }
+
+        if (from < 9) {
+          if (!await _tableExists('hsn_entries')) {
+            await m.createTable(hsnEntries);
+          }
+          await ensureDefaultHsnEntries();
+
+          if (!await _columnExists('inventory_items', 'hsn_code')) {
+            await m.addColumn(inventoryItems, inventoryItems.hsnCode);
+          }
+          if (!await _columnExists('inventory_items', 'tax_rate')) {
+            await m.addColumn(inventoryItems, inventoryItems.taxRate);
+          }
+          if (!await _columnExists('inventory_items', 'is_tax_inclusive')) {
+            await m.addColumn(inventoryItems, inventoryItems.isTaxInclusive);
+          }
+        }
+
+        if (from < 10) {
+          if (!await _columnExists('invoices', 'taxable_amount')) {
+            await m.addColumn(invoices, invoices.taxableAmount);
+          }
+          if (!await _columnExists('invoices', 'total_tax_amount')) {
+            await m.addColumn(invoices, invoices.totalTaxAmount);
+          }
+          if (!await _columnExists('invoices', 'cgst_amount')) {
+            await m.addColumn(invoices, invoices.cgstAmount);
+          }
+          if (!await _columnExists('invoices', 'sgst_amount')) {
+            await m.addColumn(invoices, invoices.sgstAmount);
+          }
+          if (!await _columnExists('invoice_items', 'hsn_code')) {
+            await m.addColumn(invoiceItems, invoiceItems.hsnCode);
+          }
+          if (!await _columnExists('invoice_items', 'tax_rate')) {
+            await m.addColumn(invoiceItems, invoiceItems.taxRate);
+          }
+          if (!await _columnExists('invoice_items', 'taxable_amount')) {
+            await m.addColumn(invoiceItems, invoiceItems.taxableAmount);
+          }
+          if (!await _columnExists('invoice_items', 'tax_amount')) {
+            await m.addColumn(invoiceItems, invoiceItems.taxAmount);
+          }
+          if (!await _columnExists('invoice_items', 'cgst_amount')) {
+            await m.addColumn(invoiceItems, invoiceItems.cgstAmount);
+          }
+          if (!await _columnExists('invoice_items', 'sgst_amount')) {
+            await m.addColumn(invoiceItems, invoiceItems.sgstAmount);
+          }
+          if (!await _columnExists('invoice_items', 'is_tax_inclusive')) {
+            await m.addColumn(invoiceItems, invoiceItems.isTaxInclusive);
+          }
         }
       },
     );
@@ -506,6 +562,73 @@ class AppDatabase extends _$AppDatabase {
       debugPrint('Failed to check column existence for $table.$column: $e');
       // If we can't determine, be conservative and return false so migration will attempt
       return false;
+    }
+  }
+
+  // ============ HSN Operations ============
+
+  /// Get all HSN entries ordered by code
+  Future<List<HsnEntry>> getAllHsnEntries() {
+    return (select(hsnEntries)
+          ..orderBy([(t) => OrderingTerm.asc(t.hsnCode)]))
+        .get();
+  }
+
+  /// Get a single HSN entry by code
+  Future<HsnEntry?> getHsnByCode(String code) {
+    return (select(hsnEntries)
+          ..where((t) => t.hsnCode.equals(code.trim())))
+        .getSingleOrNull();
+  }
+
+  /// Get a single HSN entry by primary key ID
+  Future<HsnEntry?> getHsnById(int id) {
+    return (select(hsnEntries)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  /// Insert a new HSN entry
+  Future<int> insertHsnEntry(HsnEntriesCompanion entry) {
+    return into(hsnEntries).insert(entry);
+  }
+
+  /// Update an existing HSN entry
+  Future<bool> updateHsnEntry(HsnEntriesCompanion entry) {
+    return update(hsnEntries).replace(entry);
+  }
+
+  /// Delete an HSN entry by ID
+  Future<int> deleteHsnEntry(int id) {
+    return (delete(hsnEntries)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Ensure common GST tax slabs are populated
+  Future<void> ensureDefaultHsnEntries() async {
+    try {
+      final count = await customSelect('SELECT COUNT(*) AS c FROM hsn_entries').getSingle();
+      final total = count.read<int>('c');
+      if (total == 0) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final defaultSlabs = [
+          ('0000', 'Exempted / Nil Rated Goods & Services', 0.0, 0.0, 0.0, 0.0, true),
+          ('0808', 'Fresh Fruits (Apples, Pears, etc.)', 0.0, 0.0, 0.0, 0.0, false),
+          ('1001', 'Wheat and Meslin / Food Grains', 5.0, 2.5, 2.5, 5.0, false),
+          ('0401', 'Dairy Products (Milk, Cream, etc.)', 5.0, 2.5, 2.5, 5.0, false),
+          ('1905', 'Bakery, Pastries, Biscuits & Cakes', 12.0, 6.0, 6.0, 12.0, false),
+          ('2106', 'Packaged Food & Confectionery', 18.0, 9.0, 9.0, 18.0, false),
+          ('8471', 'Electronics, Computers & POS Hardware', 18.0, 9.0, 9.0, 18.0, false),
+          ('2202', 'Aerated Beverages & Luxury Items', 28.0, 14.0, 14.0, 28.0, false),
+        ];
+
+        for (final slab in defaultSlabs) {
+          await customStatement(
+            'INSERT OR IGNORE INTO hsn_entries (hsn_code, description, gst_rate, cgst_rate, sgst_rate, igst_rate, is_default, created_at, updated_at) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [slab.$1, slab.$2, slab.$3, slab.$4, slab.$5, slab.$6, slab.$7 ? 1 : 0, now, now],
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('ensureDefaultHsnEntries failed: $e');
     }
   }
 }
